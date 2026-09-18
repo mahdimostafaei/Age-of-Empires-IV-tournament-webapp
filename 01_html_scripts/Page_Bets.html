@@ -1,0 +1,171 @@
+<style>
+  /* Dedicated Betting Card Style (Replaces login-card) */
+  .bet-card {
+    background: #1e293b;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    text-align: left;
+    padding: 25px;
+    margin-bottom: 20px;
+    border: 1px solid #334155;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* =========================================
+     BETTING PAGE MOBILE OVERRIDES 
+     ========================================= */
+  @media (max-width: 768px) {
+    /* Stack the header and make the button full width */
+    .dashboard-container .dash-header { 
+      display: flex; 
+      flex-direction: column; 
+      gap: 15px; 
+      text-align: center; 
+    }
+    .dashboard-container .dash-header button { 
+      width: 100%; 
+      padding: 12px;
+    }
+    
+    /* Reduce card padding for smaller screens */
+    .bet-card { 
+      padding: 15px !important; 
+    }
+
+    /* Force tables to scroll horizontally instead of breaking the page */
+    #bettor-leaderboard-list, 
+    #bettor-history-list {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin-top: 10px;
+    }
+  }
+</style>
+
+<div class="dashboard-container">
+  <div class="dash-header" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+    <div>
+      <h1 style="margin: 0 0 5px 0; color: #f8fafc;">🏆 Tournament Betting</h1>
+      <p style="color: #94a3b8; font-size: 13px; margin: 0;">Track points, active wagers, and the global leaderboard.</p>
+    </div>
+    <button onclick="refreshBettingData(this)" class="refresh-btn" style="background: #1e5b43; color: white; border: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; cursor: pointer;">🔄 Refresh Data</button>
+  </div>
+
+  <!-- BET LEADERBOARD CARD -->
+  <div class="bet-card">
+    <h3 style="margin-top: 0; color: #f8fafc; border-bottom: 1px solid #334155; padding-bottom: 10px;">🏅 Bettor Leaderboard</h3>
+    <div id="bettor-leaderboard-list">
+      <p style="color: #64748b; text-align: center; padding: 20px;">Loading standings...</p>
+    </div>
+  </div>
+
+  <!-- RECENT WAGER LOG -->
+  <div class="bet-card" style="margin-bottom: 0;">
+    <h3 style="margin-top: 0; color: #f8fafc; border-bottom: 1px solid #334155; padding-bottom: 10px;">📜 Recent Wager Log</h3>
+    <div id="bettor-history-list">
+      <p style="color: #64748b; text-align: center; padding: 20px;">Loading wager history...</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  function renderBettingUI(parsed) {
+    // Render Leaderboard
+    var lbContainer = document.getElementById("bettor-leaderboard-list");
+    if (!parsed.leaderboard || parsed.leaderboard.length === 0) {
+      lbContainer.innerHTML = '<p style="color: #64748b; text-align: center; padding: 15px;">No bettors registered yet.</p>';
+    } else {
+      var lbHtml = '<table style="width: 100%; border-collapse: collapse; color: #cbd5e1; font-size: 14px; min-width: 400px;">' +
+        '<tr style="border-bottom: 1px solid #334155; text-align: left; color: #94a3b8; font-size: 12px;">' +
+          '<th style="padding: 8px;">Rank</th><th style="padding: 8px;">Name</th><th style="padding: 8px;">Username</th><th style="padding: 8px; text-align: right;">Points</th>' +
+        '</tr>';
+      
+      parsed.leaderboard.forEach(function(b, idx) {
+        var rankColor = idx === 0 ? '#facc15' : (idx === 1 ? '#94a3b8' : (idx === 2 ? '#b45309' : '#cbd5e1'));
+        lbHtml += '<tr style="border-bottom: 1px solid #1e293b;">' +
+          '<td style="padding: 10px 8px; font-weight: bold; color: ' + rankColor + ';">#' + (idx + 1) + '</td>' +
+          '<td style="padding: 10px 8px; color: #f8fafc; font-weight: bold;">' + (b.firstName || 'Unknown') + '</td>' +
+          '<td style="padding: 10px 8px; color: #94a3b8;">@' + (b.username || 'n/a') + '</td>' +
+          '<td style="padding: 10px 8px; text-align: right; font-weight: bold; color: #3b82f6;">' + b.points + ' pts</td>' +
+        '</tr>';
+      });
+      lbHtml += '</table>';
+      lbContainer.innerHTML = lbHtml;
+    }
+
+    // Render Wager Log
+    var logContainer = document.getElementById("bettor-history-list");
+    if (!parsed.logs || parsed.logs.length === 0) {
+      logContainer.innerHTML = '<p style="color: #64748b; text-align: center; padding: 15px;">No wagers recorded yet.</p>';
+    } else {
+      var logHtml = '<table style="width: 100%; border-collapse: collapse; color: #cbd5e1; font-size: 14px; min-width: 500px;">' +
+        '<tr style="border-bottom: 1px solid #334155; text-align: left; color: #94a3b8; font-size: 12px;">' +
+          '<th style="padding: 8px;">User</th><th style="padding: 8px;">Option</th><th style="padding: 8px;">Payout</th><th style="padding: 8px;">Outcome</th><th style="padding: 8px; text-align: right;">Time</th>' +
+        '</tr>';
+        
+      parsed.logs.forEach(function(l) {
+        // Safely handle empty database cells so they display "Pending" instead of crashing[cite: 6]
+        var rawOutcome = l.outcome ? String(l.outcome).trim() : "";
+        var displayOutcome = rawOutcome === "" ? "Pending" : rawOutcome;
+        
+        var outcomeColor = displayOutcome.toLowerCase() === 'won' ? '#10b981' : (displayOutcome.toLowerCase() === 'lost' ? '#ef4444' : '#f59e0b');
+        
+        // Hide payout amount if the bet is still pending[cite: 6]
+        var payoutDisplay = displayOutcome.toLowerCase() === 'pending' ? "-" : l.payout;
+        
+        logHtml += '<tr style="border-bottom: 1px solid #1e293b;">' +
+          '<td style="padding: 10px 8px; color: #f8fafc;">' + (l.firstName || l.username || 'User') + '</td>' +
+          '<td style="padding: 10px 8px; color: #94a3b8;">Opt: ' + l.optionId + '</td>' +
+          '<td style="padding: 10px 8px; font-weight: bold;">' + payoutDisplay + '</td>' +
+          '<td style="padding: 10px 8px; font-weight: bold; color: ' + outcomeColor + '; text-transform: uppercase; font-size: 12px;">' + displayOutcome + '</td>' +
+          '<td style="padding: 10px 8px; text-align: right; color: #64748b; font-size: 12px;">' + new Date(l.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + '</td>' +
+        '</tr>';
+      });
+      logHtml += '</table>';
+      logContainer.innerHTML = logHtml;
+    }
+}
+
+  function loadBettingData() {
+    google.script.run.withSuccessHandler(function(res) {
+      var parsed = JSON.parse(res);
+      if (!parsed.success) {
+        console.error("Betting load error:", parsed.error);
+        return;
+      }
+      renderBettingUI(parsed);
+    }).get_betting_data();
+  }
+
+  // Automatically load betting data when tab opens
+  loadBettingData();
+  
+  function refreshBettingData(btnElement) {
+    const originalText = btnElement.innerText;
+    btnElement.innerText = "⏳ Fetching...";
+    btnElement.disabled = true;
+    btnElement.style.opacity = "0.7";
+
+    google.script.run
+      .withSuccessHandler(function(response) {
+         btnElement.innerText = originalText;
+         btnElement.disabled = false;
+         btnElement.style.opacity = "1";
+         
+         const data = JSON.parse(response);
+         if (data.success) {
+             renderBettingUI(data); 
+         } else {
+             alert("Error fetching ledger: " + data.error);
+         }
+      })
+      .withFailureHandler(function(err) {
+         btnElement.innerText = originalText;
+         btnElement.disabled = false;
+         btnElement.style.opacity = "1";
+         alert("Database connection failed: " + err.message);
+      })
+      .get_betting_data();
+  }
+</script>

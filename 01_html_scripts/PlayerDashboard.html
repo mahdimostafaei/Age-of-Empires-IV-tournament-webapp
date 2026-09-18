@@ -1,0 +1,595 @@
+<!-- DASHBOARD WRAPPER -->
+<div class="dashboard-container">
+  
+  <div id="login-section" class="login-card">
+    <h2 style="margin-bottom: 5px;">Player Access</h2>
+    <p style="color: #94a3b8; font-size: 13px; margin-bottom: 20px;">Enter your in-game name and PIN to report matches.</p>
+    <input type="text" id="login-name" class="dash-input" placeholder="Player Name" />
+    <input type="password" id="login-pin" class="dash-input" placeholder="Enter PIN" />
+    <div style="text-align: left; margin-bottom: 20px; color: #94a3b8; font-size: 14px;">
+      <input type="checkbox" id="remember-me" style="cursor: pointer; margin-right: 8px;">
+      <label for="remember-me" style="cursor: pointer;">Keep me signed in</label>
+    </div>
+    <button class="dash-btn primary-btn" onclick="attemptLogin()">Login to Dashboard</button>
+    <p id="login-error" class="error-msg" style="display: none;"></p>
+  </div>
+
+  <div id="dash-loader" class="state-loader" style="display: none;">
+    <div class="spinner"></div>
+    <p>Authenticating...</p>
+  </div>
+
+  <div id="dashboard-section" style="display: none;">
+    <div class="dash-header">
+      <div>
+        <h1 id="dash-welcome-text" style="margin: 0 0 15px 0; color: #f8fafc;">Welcome, Player</h1>
+        <span class="badge" style="background: #3b82f6;">Tournament Elo: <strong id="dash-elo-text">1000</strong></span>
+      </div>
+      <button class="dash-btn outline-btn" onclick="logout()">Logout</button>
+    </div>
+    <h3 class="section-title" style="margin-top: 30px; color: #008000;">⚔️ Your Active Matches</h3>
+    <div id="active-matches-list"></div>
+  </div>
+
+  <!-- REPORT MATCH START MODAL -->
+  <div id="report-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div id="report-input-state">
+        <h3 style="margin-top: 0; color: #f8fafc; margin-bottom: 5px;">Report Match Start</h3>
+        <p id="modal-subtitle" style="color: #94a3b8; font-size: 13px; margin-bottom: 20px;"></p>
+        <input type="hidden" id="modal-match-id" />
+        <input type="hidden" id="modal-player-name" />
+        <input type="hidden" id="modal-opp-name" />
+        <input type="hidden" id="modal-is-p1" />
+        <label style="font-size: 12px; color: #cbd5e1; font-weight: bold;">Your Civilization</label>
+        <select id="modal-my-civ" class="dash-input" style="margin-top: 5px;"></select>
+        <label style="font-size: 12px; color: #cbd5e1; font-weight: bold;">Opponent Civilization</label>
+        <select id="modal-opp-civ" class="dash-input" style="margin-top: 5px;"></select>
+        <label style="font-size: 12px; color: #cbd5e1; font-weight: bold;">Map Played</label>
+        <select id="modal-map" class="dash-input" style="margin-top: 5px; margin-bottom: 0;"></select>
+        <p id="report-error" class="error-msg" style="display: none; text-align: center; margin-top: 15px;"></p>
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+          <button class="dash-btn outline-btn" style="flex: 1;" onclick="closeReportModal()">Cancel</button>
+          <button class="dash-btn primary-btn" style="flex: 1;" onclick="submitReport()">Submit Match</button>
+        </div>
+      </div>
+      <div id="report-success-state" style="display: none; text-align: center; padding: 20px 0;">
+        <h1 style="font-size: 48px; margin: 0 0 10px 0; color: #10b981;">✔️</h1>
+        <h3 style="color: #f8fafc; margin: 0;">Match Start Reported</h3>
+        <p style="color: #94a3b8; font-size: 14px;">Preparing result screen...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MASTER CONFIRMATION MODAL -->
+  <div id="confirm-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div id="confirm-input-state">
+        <h3 style="margin-top: 0; color: #f8fafc; margin-bottom: 5px;">Confirm Match Result</h3>
+        <p id="confirm-subtitle" style="color: #94a3b8; font-size: 13px; margin-bottom: 20px;"></p>
+        <input type="hidden" id="confirm-match-id" />
+        <div style="background: #0f172a; padding: 15px; border-radius: 6px; margin-bottom: 15px; font-size: 14px;">
+          <p style="margin: 0 0 8px 0;"><strong>Your Civ:</strong> <span id="confirm-my-civ"></span></p>
+          <p style="margin: 0 0 8px 0;"><strong>Opponent Civ:</strong> <span id="confirm-opp-civ"></span></p>
+          <p style="margin: 0 0 8px 0;"><strong>Map:</strong> <span id="confirm-map"></span></p>
+          <p style="margin: 0; padding-top: 8px; border-top: 1px solid #334155;"><strong>Reported Winner:</strong> <span id="confirm-winner" style="color: #f59e0b; font-weight: bold;"></span></p>
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+          <button class="dash-btn" style="flex: 1; background: #ef4444; color: white;" onclick="promptReject()">Reject (Report to Admin)</button>
+          <button class="dash-btn primary-btn" style="flex: 1; background: #10b981;" onclick="promptConfirm()">Confirm</button>
+        </div>
+      </div>
+      <div id="confirm-success-state" style="display: none; text-align: center; padding: 20px 0;">
+        <h1 style="font-size: 48px; margin: 0 0 10px 0; color: #10b981;">✔️</h1>
+        <h3 style="color: #f8fafc; margin: 0;">Reply Submitted</h3>
+        <p style="color: #94a3b8; font-size: 14px;">Updating dashboard...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- REPORT WINNER MODAL -->
+  <div id="winner-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div id="winner-input-state">
+        <h3 style="margin-top: 0; color: #f8fafc; margin-bottom: 5px;">Report Match Winner</h3>
+        <p id="winner-subtitle" style="color: #94a3b8; font-size: 13px; margin-bottom: 20px;"></p>
+        <input type="hidden" id="winner-match-id" />
+        <input type="hidden" id="winner-player-name" />
+        <input type="hidden" id="winner-opp-name" />
+        <label style="font-size: 12px; color: #cbd5e1; font-weight: bold;">Match Winner</label>
+        <select id="winner-select" class="dash-input" style="margin-top: 5px; margin-bottom: 0;">
+          <option value="" disabled selected>Who won this game?</option>
+          <option id="opt-me" value="me"></option>
+          <option id="opt-opp" value="opp"></option>
+        </select>
+        <p id="winner-error" class="error-msg" style="display: none; text-align: center; margin-top: 15px;"></p>
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+          <button class="dash-btn outline-btn" style="flex: 1;" onclick="closeWinnerModal()">Cancel / Play Later</button>
+          <button class="dash-btn primary-btn" style="flex: 1; background: #10b981;" onclick="submitWinner()">Submit Winner</button>
+        </div>
+      </div>
+      <div id="winner-success-state" style="display: none; text-align: center; padding: 20px 0;">
+        <h1 style="font-size: 48px; margin: 0 0 10px 0;">🏆</h1>
+        <h3 style="color: #f8fafc; margin: 0;">Winner Recorded</h3>
+        <p style="color: #94a3b8; font-size: 14px;">Updating tournament brackets...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- GLOBAL CUSTOM CONFIRMATION MODAL -->
+  <div id="custom-confirm-modal" class="modal-overlay" style="display: none; z-index: 2000;">
+    <div class="modal-content" style="text-align: center; max-width: 350px;">
+      <h3 id="custom-confirm-title" style="margin-top: 0; color: #f8fafc; margin-bottom: 10px;">Are you sure?</h3>
+      <p id="custom-confirm-message" style="color: #94a3b8; font-size: 14px; margin-bottom: 20px;"></p>
+      <div style="display: flex; gap: 10px;">
+        <button class="dash-btn outline-btn" style="flex: 1;" onclick="hideCustomConfirm()">Cancel</button>
+        <button id="custom-confirm-btn" class="dash-btn primary-btn" style="flex: 1;" onclick="executeCustomConfirm()">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- DASHBOARD STYLES -->
+<style>
+  .dashboard-container { max-width: 800px; margin: 0 auto; font-family: sans-serif; color: #cbd5e1; }
+  .login-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 40px 30px; max-width: 400px; margin: 50px auto; text-align: center; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); }
+  .dash-input { width: 100%; box-sizing: border-box; background: #0f172a; border: 1px solid #475569; color: white; padding: 12px 15px; border-radius: 6px; margin-bottom: 15px; font-size: 16px; }
+  .dash-input:focus { outline: none; border-color: #3b82f6; }
+  .error-msg { color: #ef4444; font-size: 13px; font-weight: bold; margin: 0; }
+  .dash-btn { padding: 10px 16px; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; border: none; transition: 0.2s; }
+  .primary-btn { width: 100%; background: #3b82f6; color: white; }
+  .primary-btn:hover { background: #2563eb; }
+  .outline-btn { background: transparent; border: 1px solid #64748b; color: #cbd5e1; }
+  .outline-btn:hover { background: #334155; }
+  .report-btn { background: #10b981; color: white; width: 100%; margin-top: 15px; }
+  .report-btn:hover { background: #059669; }
+  .dash-header { background: linear-gradient(to right, #1e293b, #0f172a); border: 1px solid #334155; border-radius: 12px; padding: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); }
+  .match-action-card { background: #1e293b; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); }
+  .match-action-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #334155; padding-bottom: 15px; margin-bottom: 15px; }
+  .draft-links-container { display: flex; gap: 10px; }
+  .draft-link-btn { background: #334155; color: white; text-decoration: none; font-size: 12px; padding: 6px 12px; border-radius: 4px; display: inline-block; }
+  .draft-link-btn:hover { background: #475569; }
+  .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.85); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+  .modal-content { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 25px; width: 90%; max-width: 400px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); }
+  
+  /* Intel, H2H, & Telegram Styles */
+  .tele-link-btn { background: #0284c7; color: white; text-decoration: none; font-size: 12px; padding: 6px 12px; border-radius: 12px; display: inline-flex; align-items: center; margin-left: 15px; font-weight: bold; transition: 0.2s; }
+  .tele-link-btn:hover { background: #0369a1; }
+  
+  .intel-box { background: rgba(15, 23, 42, 0.6); border: 1px solid #334155; border-radius: 6px; padding: 12px 15px; margin-top: 15px; font-size: 14px; color: #f8fafc; display: flex; justify-content: space-between; align-items: stretch; }
+  
+  .intel-left { flex: 1.2; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+  .intel-right { flex: 1; text-align: center; padding-left: 15px; margin-left: 15px; border-left: 1px solid #334155; display: flex; flex-direction: column; justify-content: center; }
+  
+  .intel-row { display: flex; align-items: center; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .intel-row:last-child { margin-bottom: 0; }
+  .intel-label { font-weight: bold; color: #94a3b8; margin-right: 12px; min-width: 105px; text-transform: uppercase; font-size: 12px; white-space: nowrap; }
+  
+  .h2h-main-title { color: #facc15; font-size: 16px; font-weight: bold; margin-bottom: 8px; }
+  .h2h-players { color: #facc15; font-size: 18px; font-weight: bold; margin-bottom: 4px; }
+  .h2h-big-score { color: #facc15; font-size: 22px; font-weight: bold; letter-spacing: 3px; }
+  
+  .form-badge { display: inline-block; width: 18px; height: 18px; line-height: 18px; text-align: center; border-radius: 3px; font-size: 11px; font-weight: bold; margin-right: 4px; color: white; }
+  .form-w { background: #10b981; }
+  .form-l { background: #ef4444; }
+</style>
+
+<!-- DASHBOARD LOGIC -->
+<script>
+  var loggedInPlayerName = "";
+  var confirmActionCallback = null;
+
+  function attemptLogin() {
+    var name = document.getElementById("login-name").value.trim();
+    var pin = document.getElementById("login-pin").value.trim();
+    var errorMsg = document.getElementById("login-error");
+    if (!name || !pin) {
+      errorMsg.innerText = "Please enter both Name and PIN.";
+      errorMsg.style.display = "block";
+      return;
+    }
+    errorMsg.style.display = "none";
+    document.getElementById("login-section").style.display = "none";
+    document.getElementById("dash-loader").style.display = "block";
+
+    google.script.run
+      .withSuccessHandler(handleLoginResponse)
+      .withFailureHandler(function(err) {
+        errorMsg.innerText = "Server error: " + err.message;
+        document.getElementById("dash-loader").style.display = "none";
+        document.getElementById("login-section").style.display = "block";
+        errorMsg.style.display = "block";
+      })
+      .authenticate_player_dashboard(name, pin);
+  }
+
+  function handleLoginResponse(jsonString) {
+    var response = JSON.parse(jsonString);
+    if (!response.success) {
+        var errorMsg = document.getElementById("login-error");
+        errorMsg.innerText = response.error;
+        document.getElementById("dash-loader").style.display = "none";
+        document.getElementById("login-section").style.display = "block";
+        errorMsg.style.display = "block";
+        return;
+    }
+
+    var mapDropdown = document.getElementById("modal-map");
+    var myCivDropdown = document.getElementById("modal-my-civ");
+    var oppCivDropdown = document.getElementById("modal-opp-civ");
+
+    mapDropdown.innerHTML = '<option value="" disabled selected>Select Map</option>';
+    myCivDropdown.innerHTML = '<option value="" disabled selected>Select Civilization</option>';
+    oppCivDropdown.innerHTML = '<option value="" disabled selected>Select Civilization</option>';
+
+    if (response.activeMaps) {
+        response.activeMaps.forEach(function(map) { 
+            mapDropdown.innerHTML += '<option value="' + map + '">' + map + '</option>'; 
+        });
+    }
+    if (response.civList) {
+      response.civList.forEach(function(civ) {
+        myCivDropdown.innerHTML += '<option value="' + civ + '">' + civ + '</option>';
+        oppCivDropdown.innerHTML += '<option value="' + civ + '">' + civ + '</option>';
+      });
+    }
+
+    loggedInPlayerName = response.player.name;
+    
+    document.getElementById("login-section").style.display = "none";
+    document.getElementById("dash-loader").style.display = "none";
+    document.getElementById("dashboard-section").style.display = "block";
+
+    if (document.getElementById("remember-me").checked) {
+      localStorage.setItem("aoe4_hub_name", document.getElementById("login-name").value.trim());
+      localStorage.setItem("aoe4_hub_pin", document.getElementById("login-pin").value.trim());
+    }
+
+    document.getElementById("dash-welcome-text").innerText = "Welcome, " + response.player.name;
+    document.getElementById("dash-elo-text").innerText = response.player.elo;
+
+    if (response.pendingConfirmation) {
+        showConfirmModal(response.pendingConfirmation);
+    } else {
+        document.getElementById('confirm-modal').style.display = 'none';
+    }
+
+    var container = document.getElementById("active-matches-list");
+    container.innerHTML = "";
+
+    if (response.matches.length === 0) {
+      container.innerHTML = '<p style="text-align: center; color: #64748b; padding: 20px;">You have no active matches.</p>';
+      return;
+    }
+
+    response.matches.forEach(function(match) {
+      var draftsHtml = '<div class="draft-links-container">';
+      if (match.civDraftLink) draftsHtml += '<a href="' + match.civDraftLink + '" target="_blank" class="draft-link-btn">⚔️ Civ Draft</a>';
+      if (match.mapDraftLink) draftsHtml += '<a href="' + match.mapDraftLink + '" target="_blank" class="draft-link-btn">🗺️ Map Draft</a>';
+      draftsHtml += '</div>';
+      if (!match.civDraftLink && !match.mapDraftLink) draftsHtml = '<span style="color:#64748b; font-size:12px;">No Draft Links</span>';
+
+      var teleBtn = "";
+      if (match.opponentTelegram && match.opponentTelegram.trim() !== "") {
+        /* Regex-Free Telegram Parser to avoid Google Apps Script compiler bugs */
+        var cleanHandle = match.opponentTelegram;
+        if (cleanHandle.indexOf('t.me/') !== -1) {
+            cleanHandle = cleanHandle.split('t.me/')[1];
+        }
+        cleanHandle = cleanHandle.split('@').join('').trim();
+        if (cleanHandle.indexOf('/') !== -1) {
+            cleanHandle = cleanHandle.split('/')[0];
+        }
+          
+        if (cleanHandle.length > 0) {
+          teleBtn = '<a href="https://t.me/' + cleanHandle + '" target="_blank" class="tele-link-btn">💬 Telegram</a>';
+        }
+      }
+
+      var historyHtml = '';
+      if (match.opponentHistory && match.opponentHistory.length > 0) {
+        historyHtml = match.opponentHistory.map(function(res) {
+          var cssClass = (res === 'W') ? 'form-w' : 'form-l';
+          return '<span class="form-badge ' + cssClass + '">' + res + '</span>';
+        }).join('');
+      } else {
+        historyHtml = '<span style="color:#64748b; font-style: italic;">No recent data</span>';
+      }
+      
+      var intelBoxHtml = '<div class="intel-box">' +
+           '<div class="intel-left">' +
+               '<div class="intel-row">' +
+                  '<span class="intel-label">Rating:</span>' +
+                  '<span style="color: #3b82f6; font-weight:bold; font-size: 15px;">' + (match.opponentElo || '1000') + '</span>' + 
+               '</div>' +
+               '<div class="intel-row">' +
+                  '<span class="intel-label">Form:</span>' +
+                  '<div style="display: flex; align-items: center;">' + historyHtml + '</div>' +
+               '</div>' +
+               '<div class="intel-row">' +
+                  '<span class="intel-label">Mostly Plays:</span>' +
+                  '<span style="color: #ffffff; overflow: hidden; text-overflow: ellipsis;">' + match.opponentTopCivs + '</span>' +
+               '</div>' +
+           '</div>' +
+           '<div class="intel-right" style="display: none;">' +
+               '<div class="h2h-main-title">Head to Head (all time)</div>' +
+               '<div class="h2h-players">' + response.player.name + ' vs ' + match.opponent + '</div>' +
+               '<div class="h2h-big-score">' + match.myH2HWins + ' - ' + match.opponentH2HWins + '</div>' +
+           '</div>' +
+        '</div>';
+
+      var actionButtonHtml = "";
+      if (match.isDisputed) {
+        actionButtonHtml = '<button class="dash-btn outline-btn" style="width:100%; margin-top:15px; background: #334155; color: #ef4444; border-color: #ef4444;" disabled>⚠️ Match Disputed (Admin Notified)</button>';
+      } else if (match.isWaitingConfirmation) {
+        actionButtonHtml = '<button class="dash-btn outline-btn" style="width:100%; margin-top:15px; background: #334155; color: #94a3b8;" disabled>⏳ Waiting for Opponent Confirmation</button>';
+      } else if (match.isActive) {
+        actionButtonHtml = '<button class="dash-btn report-btn" style="width:100%; margin-top:15px;" onclick="openWinnerModal(\'' + match.matchId + '\', \'' + response.player.name + '\', \'' + match.opponent + '\')">🏆 Report Winner</button>';
+      } else {
+        actionButtonHtml = '<button class="dash-btn outline-btn" style="width:100%; margin-top:15px;" onclick="openReportModal(\'' + match.matchId + '\', \'' + response.player.name + '\', \'' + match.opponent + '\', ' + match.isPlayer1 + ')">📝 Report Match Start</button>';
+      }
+
+      if (response.isAdmin && (match.isActive || match.isWaitingConfirmation || match.isDisputed)) {
+        actionButtonHtml += '<button class="dash-btn" style="width:100%; margin-top:10px; background: #ef4444; color: white;" onclick="adminCancelMatch(\'' + match.matchId + '\')">⚠️ Admin Override: Reset Match</button>';
+      }
+
+      var card = document.createElement('div');
+      card.className = "match-action-card";
+      card.innerHTML = '<div class="match-action-header">' +
+          '<div>' +
+            '<span style="font-size: 12px; color: #94a3b8; text-transform: uppercase; font-weight: bold;">' + match.stage + ' • ' + match.format + '</span>' +
+            '<h3 style="margin: 5px 0 0 0; color: #f8fafc; font-size: 20px; display: flex; align-items: center;">vs. ' + match.opponent + ' ' + teleBtn + '</h3>' +
+          '</div>' + draftsHtml + '</div>' + intelBoxHtml + actionButtonHtml;
+          
+      container.appendChild(card);
+    });
+  }
+
+  function logout() {
+    localStorage.removeItem("aoe4_hub_name");
+    localStorage.removeItem("aoe4_hub_pin");
+    loggedInPlayerName = "";
+    document.getElementById("login-name").value = "";
+    document.getElementById("login-pin").value = "";
+    document.getElementById("remember-me").checked = false;
+    document.getElementById("dashboard-section").style.display = "none";
+    document.getElementById("login-section").style.display = "block";
+  }
+
+  function showCustomConfirm(title, message, btnText, btnColor, callback) {
+    document.getElementById("custom-confirm-title").innerText = title;
+    document.getElementById("custom-confirm-message").innerText = message;
+    var confirmBtn = document.getElementById("custom-confirm-btn");
+    confirmBtn.innerText = btnText;
+    confirmBtn.style.background = btnColor;
+    confirmActionCallback = callback;
+    document.getElementById("custom-confirm-modal").style.display = "flex";
+  }
+
+  function hideCustomConfirm() {
+    document.getElementById("custom-confirm-modal").style.display = "none";
+    confirmActionCallback = null;
+  }
+
+  function executeCustomConfirm() {
+    if (confirmActionCallback) confirmActionCallback();
+    hideCustomConfirm();
+  }
+
+  function openReportModal(matchId, playerName, opponentName, isP1) {
+    document.getElementById('modal-match-id').value = matchId;
+    document.getElementById('modal-player-name').value = playerName;
+    document.getElementById('modal-opp-name').value = opponentName;
+    document.getElementById('modal-is-p1').value = isP1;
+    document.getElementById('modal-subtitle').innerText = "Reporting start for: " + playerName + " vs. " + opponentName;
+    document.getElementById('report-error').style.display = 'none';
+    document.getElementById('report-input-state').style.display = 'block';
+    document.getElementById('report-success-state').style.display = 'none';
+    document.getElementById('report-modal').style.display = 'flex';
+  }
+
+  function closeReportModal() {
+    document.getElementById('report-modal').style.display = 'none';
+    document.getElementById('modal-my-civ').value = "";
+    document.getElementById('modal-opp-civ').value = "";
+    document.getElementById('modal-map').value = "";
+  }
+
+  function submitReport() {
+    var errorDisplay = document.getElementById('report-error');
+    errorDisplay.style.display = 'none';
+
+    var matchId = document.getElementById('modal-match-id').value;
+    var playerName = document.getElementById('modal-player-name').value || loggedInPlayerName;
+    var oppName = document.getElementById('modal-opp-name').value;
+    var myCiv = document.getElementById('modal-my-civ').value;
+    var oppCiv = document.getElementById('modal-opp-civ').value;
+    var map = document.getElementById('modal-map').value;
+    var isPlayerOne = document.getElementById('modal-is-p1').value === "true"; 
+
+    if (!myCiv || !oppCiv || !map) {
+        errorDisplay.innerText = "Please select both civilizations and a map.";
+        errorDisplay.style.display = 'block';
+        return;
+    }
+
+    var submitBtn = document.querySelector("#report-input-state .primary-btn");
+    var cancelBtn = document.querySelector("#report-input-state .outline-btn");
+    submitBtn.disabled = true;
+    cancelBtn.disabled = true;
+    submitBtn.innerText = "Submitting... Please wait";
+
+    var payload = { playerName: playerName, map: map, p1Civ: isPlayerOne ? myCiv : oppCiv, p2Civ: isPlayerOne ? oppCiv : myCiv };
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        var resp = JSON.parse(res);
+        submitBtn.disabled = false;
+        cancelBtn.disabled = false;
+        submitBtn.innerText = "Submit Match";
+
+        if (resp.success) {
+          document.getElementById('report-input-state').style.display = 'none';
+          document.getElementById('report-success-state').style.display = 'block';
+          setTimeout(function() {
+            closeReportModal();
+            attemptLogin(); 
+            openWinnerModal(matchId, playerName, oppName);
+          }, 1500);
+        } else {
+            errorDisplay.innerText = "Error: " + resp.error;
+            errorDisplay.style.display = 'block';
+        }
+      })
+      .submit_dashboard_action("report_match_start", matchId, payload);
+  }
+  
+  function openWinnerModal(matchId, playerName, opponentName) {
+    document.getElementById('winner-match-id').value = matchId;
+    document.getElementById('winner-player-name').value = playerName;
+    document.getElementById('winner-opp-name').value = opponentName;
+    document.getElementById('winner-subtitle').innerText = "Select winner for: " + playerName + " vs. " + opponentName;
+    document.getElementById('opt-me').value = playerName;
+    document.getElementById('opt-me').innerText = "I Won (" + playerName + ")";
+    document.getElementById('opt-opp').value = opponentName;
+    document.getElementById('opt-opp').innerText = "Opponent Won (" + opponentName + ")";
+    document.getElementById('winner-error').style.display = 'none';
+    document.getElementById('winner-input-state').style.display = 'block';
+    document.getElementById('winner-success-state').style.display = 'none';
+    document.getElementById('winner-modal').style.display = 'flex';
+  }
+
+  function closeWinnerModal() {
+    document.getElementById('winner-modal').style.display = 'none';
+    document.getElementById('winner-select').value = "";
+  }
+
+  function submitWinner() {
+    var errorDisplay = document.getElementById('winner-error');
+    if (errorDisplay) errorDisplay.style.display = 'none';
+
+    var matchId = document.getElementById('winner-match-id').value;
+    var winnerName = document.getElementById('winner-select').value;
+    var playerName = document.getElementById('winner-player-name').value || loggedInPlayerName;
+
+    if (!winnerName) {
+        if (errorDisplay) {
+            errorDisplay.innerText = "Please select who won the match.";
+            errorDisplay.style.display = 'block';
+        }
+        return;
+    }
+
+    var primarySubmitBtn = document.querySelector("#winner-input-state .primary-btn") || document.querySelector("button[onclick='submitWinner()']");
+    if (primarySubmitBtn) {
+        primarySubmitBtn.disabled = true;
+        primarySubmitBtn.innerText = "Confirming...";
+    }
+
+    google.script.run
+    .withSuccessHandler(function(res) {
+        var response = JSON.parse(res);
+        if (primarySubmitBtn) {
+            primarySubmitBtn.disabled = false;
+            primarySubmitBtn.innerText = "Submit Winner";
+        }
+
+        if (response.success) {
+            document.getElementById('winner-input-state').style.display = 'none';
+            document.getElementById('winner-success-state').style.display = 'block';
+            setTimeout(function() { closeWinnerModal(); attemptLogin(); }, 1500);
+        } else {
+            if (errorDisplay) {
+                errorDisplay.innerText = response.error;
+                errorDisplay.style.display = 'block';
+            }
+        }
+    })
+    .withFailureHandler(function(err) {
+        if (primarySubmitBtn) {
+            primarySubmitBtn.disabled = false;
+            primarySubmitBtn.innerText = "Submit Winner";
+        }
+        console.error("Server error:", err);
+    })
+    .submit_dashboard_action("report_winner", matchId, { winnerName: winnerName, playerName: playerName });
+  }
+
+  function showConfirmModal(data) {
+    document.getElementById('confirm-match-id').value = data.matchId;
+    document.getElementById('confirm-subtitle').innerText = data.opponent + " has reported the match details. Please review them below:";
+    document.getElementById('confirm-my-civ').innerText = data.myCiv || data.p2Civ || "N/A";
+    document.getElementById('confirm-opp-civ').innerText = data.oppCiv || data.p1Civ || "N/A";
+    document.getElementById('confirm-map').innerText = data.map || "N/A";
+    
+    var winnerDisplay = document.getElementById('confirm-winner').parentElement;
+    if (data.winner) {
+      document.getElementById('confirm-winner').innerText = data.winner;
+      winnerDisplay.style.display = 'block';
+    } else {
+      winnerDisplay.style.display = 'none';
+    }
+    
+    document.getElementById('confirm-input-state').style.display = 'block';
+    document.getElementById('confirm-success-state').style.display = 'none';
+    document.getElementById('confirm-modal').style.display = 'flex';
+  }
+
+  function promptConfirm() {
+      showCustomConfirm("Confirm Match", "Are you sure you want to confirm these match results?", "Yes, Confirm", "#10b981", function() {
+          var submitBtn = document.getElementById("custom-confirm-btn");
+          var cancelBtn = document.querySelector("#custom-confirm-modal .outline-btn");
+          if (submitBtn) { submitBtn.disabled = true; submitBtn.innerText = "Confirming..."; }
+          if (cancelBtn) cancelBtn.disabled = true;
+
+          google.script.run
+            .withSuccessHandler(function() { 
+                if (submitBtn) submitBtn.disabled = false;
+                if (cancelBtn) cancelBtn.disabled = false;
+                document.getElementById('confirm-input-state').style.display = 'none';
+                document.getElementById('confirm-success-state').style.display = 'block';
+                setTimeout(function() { document.getElementById('confirm-modal').style.display = 'none'; attemptLogin(); }, 1500);
+            })
+            .submit_dashboard_action("confirm_result", document.getElementById('confirm-match-id').value, {});
+      });
+  }
+
+  function promptReject() {
+      showCustomConfirm("Report to Admin", "Are you sure you want to reject these results?", "Yes, Report", "#ef4444", function() {
+          var submitBtn = document.getElementById("custom-confirm-btn");
+          var cancelBtn = document.querySelector("#custom-confirm-modal .outline-btn");
+          if (submitBtn) { submitBtn.disabled = true; submitBtn.innerText = "Reporting..."; }
+          if (cancelBtn) cancelBtn.disabled = true;
+
+          google.script.run
+            .withSuccessHandler(function() { 
+                if (submitBtn) submitBtn.disabled = false;
+                if (cancelBtn) cancelBtn.disabled = false;
+                document.getElementById('confirm-input-state').style.display = 'none';
+                document.getElementById('confirm-success-state').style.display = 'block';
+                setTimeout(function() { document.getElementById('confirm-modal').style.display = 'none'; attemptLogin(); }, 1500);
+            })
+            .submit_dashboard_action("reject_result", document.getElementById('confirm-match-id').value, {});
+      });
+  }
+
+  function adminCancelMatch(matchId) {
+      showCustomConfirm("Admin Override", "Are you sure you want to completely reset this match?", "Reset Match", "#ef4444", function() {
+          google.script.run
+            .withSuccessHandler(function() { attemptLogin(); })
+            .submit_dashboard_action("admin_cancel", matchId, {});
+      });
+  }
+
+  (function checkAutoLogin() {
+    var savedName = localStorage.getItem("aoe4_hub_name");
+    var savedPin = localStorage.getItem("aoe4_hub_pin");
+    if (savedName && savedPin) {
+      document.getElementById("login-name").value = savedName;
+      document.getElementById("login-pin").value = savedPin;
+      document.getElementById("remember-me").checked = true;
+      attemptLogin();
+    }
+  })();
+</script>

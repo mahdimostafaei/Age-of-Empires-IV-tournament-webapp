@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+  </head>
+  <body>
+    <div class="card" style="background: white; padding: 25px; border-radius: 8px;">
+      <h2>📈 Civilization & Map Statistics</h2>
+      <p>Meta statistics coming soon...</p>
+    </div>
+  </body>
+</html>

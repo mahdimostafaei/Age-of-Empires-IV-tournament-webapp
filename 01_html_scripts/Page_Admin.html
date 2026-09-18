@@ -1,0 +1,550 @@
+<style>
+  /* Widened Administrator Container */
+  .admin-container { max-width: 1100px; margin: 20px auto; background: #1e293b; padding: 20px; border-radius: 8px; color: #f8fafc; font-family: sans-serif; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+  .admin-tab-bar { display: flex; justify-content: space-between; border-bottom: 2px solid #334155; padding-bottom: 10px; margin-bottom: 20px; }
+  .admin-tab-btn { background: #334155; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+  .admin-tab-btn.active { background: #10b981; }
+  .admin-tab-content { display: none; }
+  .admin-tab-content.active { display: block; }
+  
+  /* Stacked Slicers */
+  .slicer-container { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; background: #0f172a; padding: 15px; border-radius: 6px; border: 1px solid #334155; }
+  .slicer-select { width: 100%; padding: 10px; background: #1e293b; border: 1px solid #475569; color: white; border-radius: 4px; font-size: 14px; }
+  
+  /* Edit Grid for Match Cards */
+  .admin-match-card { background: #334155; padding: 20px; margin-bottom: 15px; border-radius: 8px; border-left: 4px solid #3b82f6; }
+  .match-edit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; margin-top: 15px; }
+  .edit-label { font-size: 12px; color: #94a3b8; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; display: block; }
+  .edit-select { width: 100%; padding: 8px; background: #0f172a; border: 1px solid #475569; color: white; border-radius: 4px; box-sizing: border-box; }
+  
+  /* Shared Button Styles */
+  .action-btn { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+  .save-btn { background: #10b981; color: white; width: 100%; }
+  
+  /* Generator Form Specific */
+  .generator-input { width: 100%; padding: 10px; background: #1e293b; border: 1px solid #475569; color: white; border-radius: 4px; font-size: 14px; box-sizing: border-box; margin-bottom: 15px; }
+  /* =========================================
+     ADMIN MOBILE OVERRIDES 
+     ========================================= */
+  @media (max-width: 768px) {
+    /* Reduce outer container padding */
+    .admin-container { 
+      padding: 15px; 
+      margin: 10px; 
+    }
+    
+    /* Stack Tab Navigation */
+    .admin-tab-bar { 
+      flex-direction: column; 
+      gap: 15px; 
+    }
+    .admin-tab-bar > div { 
+      flex-direction: column; 
+      width: 100%; 
+    }
+    .admin-tab-btn { 
+      width: 100%; 
+      text-align: center; 
+    }
+    
+    /* Override Inline JS Flex Layouts for Match & Registry Cards */
+    .admin-match-card[style*="display:flex"],
+    .admin-match-card[style*="display: flex"],
+    .admin-match-card > div[style*="display:flex"],
+    .admin-match-card > div[style*="display: flex"] {
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      gap: 15px !important;
+    }
+    
+    /* Force action queue buttons to full width */
+    .admin-match-card div[style*="gap:10px"],
+    .admin-match-card div[style*="gap: 10px"] {
+      width: 100%;
+      flex-direction: column !important;
+    }
+    .admin-match-card button { 
+      width: 100% !important; 
+    }
+    
+    /* Fix Registry Card Timestamp Alignment */
+    .admin-match-card div[style*="text-align: right"] {
+      text-align: left !important;
+      margin-top: 5px;
+    }
+    
+    /* Stack the Master Registration Switch */
+    #admin-organizer .slicer-container[style*="flex-direction: row"] {
+      flex-direction: column !important;
+      align-items: stretch !important;
+      text-align: left !important;
+      gap: 15px;
+    }
+  }
+</style>
+
+<!-- ADMIN LOGIN -->
+<div id="admin-login-container" class="admin-container" style="max-width: 400px; text-align: center;">
+  <h2>🔒 System Administration</h2>
+  <input type="password" id="admin-pass" placeholder="Admin Password" style="padding:10px; width:100%; margin-bottom:10px; box-sizing: border-box; background: #0f172a; color: white; border: 1px solid #334155;">
+  <div style="text-align: left; margin-bottom: 15px; color: #94a3b8; font-size: 14px;">
+    <input type="checkbox" id="admin-remember" style="cursor: pointer; margin-right: 8px;">
+    <label for="admin-remember" style="cursor: pointer;">Keep me signed in</label>
+  </div>
+  <button style="width:100%; padding: 12px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;" onclick="attemptAdminLogin()">Unlock Dashboard</button>
+</div>
+
+<!-- ADMIN UI -->
+<div id="admin-main-container" class="admin-container" style="display: none;">
+  <h2>🛡️ Administrator</h2>
+  <div class="admin-tab-bar">
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+      <button class="admin-tab-btn active" onclick="switchAdminTab('queue', this)">Action Queue</button>
+      <button class="admin-tab-btn" onclick="switchAdminTab('manager', this)">Match Manager</button>
+      <button class="admin-tab-btn" onclick="switchAdminTab('organizer', this)">Tournament Setup</button>
+      <button class="admin-tab-btn" onclick="switchAdminTab('registry', this)">Registered Players</button>
+    </div>
+    <button style="background: #ef4444; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;" onclick="adminLogout()">Logout</button>
+  </div>
+
+  <!-- TAB 1: Queue -->
+  <div id="admin-queue" class="admin-tab-content active">
+    <h3>Pending Reviews</h3>
+    <div id="queue-container">Loading queue...</div>
+  </div>
+
+  <!-- TAB 2: Match Manager -->
+  <div id="admin-manager" class="admin-tab-content">
+    <h3>Database Editor</h3>
+    <div class="slicer-container">
+      <select id="slicer-player" class="slicer-select" onchange="renderFilteredMatches()">
+        <option value="ALL">All Players</option>
+      </select>
+      <select id="slicer-stage" class="slicer-select" onchange="renderFilteredMatches()">
+        <option value="ALL">All Stages / Groups</option>
+      </select>
+      <select id="slicer-status" class="slicer-select" onchange="renderFilteredMatches()">
+        <option value="ALL">All Statuses</option>
+      </select>
+    </div>
+    <div id="manager-match-list">Loading database...</div>
+  </div>
+
+  <!-- TAB 3: Tournament Organizer -->
+  <div id="admin-organizer" class="admin-tab-content">
+    <h3>⚙️ Generate New Tournament</h3>
+    
+    <!-- MASTER REGISTRATION SWITCH -->
+    <div class="slicer-container" style="max-width: 600px; margin: 0 auto 20px auto; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #10b981; flex-direction: row;">
+      <div>
+        <h4 style="margin: 0 0 5px 0; color: white;">Public Registration</h4>
+        <small style="color: #94a3b8;">Allow players to sign up via the Tournament Hub.</small>
+      </div>
+      <button id="reg-toggle-btn" class="action-btn" style="background: #334155; color: white;" onclick="flipRegistrationToggle()">Loading...</button>
+    </div>
+    
+    <div id="tourney-form-container" class="slicer-container" style="max-width: 600px; margin: 0 auto; display: block;">
+      <label class="edit-label">Tournament Name</label>
+      <input type="text" id="tourneyName" class="generator-input" placeholder="e.g., Clustered League Season 1" required />
+
+      <label class="edit-label">Tournament Format</label>
+      <select id="tourneyType" class="generator-input">
+        <option value="League">League / Group Stage Only</option>
+        <option value="Knockout">Single Elimination Knockout</option>
+        <option value="World Cup">World Cup (Groups + Playoffs)</option>
+      </select>
+
+      <label class="edit-label">Players per Group (or Total for Knockout)</label>
+      <input type="number" id="groupSize" class="generator-input" min="2" max="128" placeholder="e.g., 8" required />
+
+      <label class="edit-label">Base Series Length</label>
+      <select id="matchFormat" class="generator-input">
+        <option value="BO1">Best of 1 (BO1)</option>
+        <option value="BO3">Best of 3 (BO3)</option>
+        <option value="BO5">Best of 5 (BO5)</option>
+      </select>
+      
+      <label class="edit-label">Playoff Override (If World Cup)</label>
+      <select id="playoffFormat" class="generator-input">
+        <option value="same">-- Keep Same as Base --</option>
+        <option value="BO1">Best of 1 (BO1)</option>
+        <option value="BO3">Best of 3 (BO3)</option>
+        <option value="BO5">Best of 5 (BO5)</option>
+      </select>
+
+      <label class="edit-label">Grand Final Override</label>
+      <select id="finalFormat" class="generator-input">
+        <option value="same">-- Keep Same as Playoff/Base --</option>
+        <option value="BO3">Best of 3 (BO3)</option>
+        <option value="BO5">Best of 5 (BO5)</option>
+        <option value="BO7">Best of 7 (BO7)</option>
+      </select>
+      
+      <button id="generate-btn" class="action-btn save-btn" onclick="submitTournamentGenerator()">Generate Tournament Architecture</button>
+    </div>
+    
+    <div id="tourney-loader" style="display: none; text-align: center; padding: 40px; font-weight: bold; color: #10b981; font-size: 18px;">
+      ⏳ Building architecture in database... Please wait.
+    </div>
+  </div>
+
+  <!-- TAB 4: Registered Players -->
+  <div id="admin-registry" class="admin-tab-content">
+    <h3>📋 Registered Players</h3>
+    <div id="registry-container">Loading database...</div>
+  </div>
+</div> <!-- Closes admin-main-container -->
+
+<script>
+  var masterMatchList = [];
+  var globalCivs = [];
+  var globalMaps = [];
+  var pendingToggleState = null; 
+
+  function attemptAdminLogin() {
+    if (document.getElementById("admin-pass").value.trim() === "9999") {
+      if (document.getElementById("admin-remember").checked) {
+        localStorage.setItem("aoe4_admin_pass", "9999");
+      }
+      document.getElementById("admin-login-container").style.display = "none";
+      document.getElementById("admin-main-container").style.display = "block";
+      loadQueue();
+      loadMatchManager();
+      loadRegToggle();
+      loadRegistry();
+    } else {
+      alert("Incorrect password");
+    }
+  }
+
+  function adminLogout() {
+    localStorage.removeItem("aoe4_admin_pass");
+    document.getElementById("admin-main-container").style.display = "none";
+    document.getElementById("admin-login-container").style.display = "block";
+    document.getElementById("admin-pass").value = "";
+    document.getElementById("admin-remember").checked = false;
+  }
+
+  (function checkAdminAutoLogin() {
+    if (localStorage.getItem("aoe4_admin_pass") === "9999") {
+      document.getElementById("admin-login-container").style.display = "none";
+      document.getElementById("admin-main-container").style.display = "block";
+      setTimeout(function() {
+        loadQueue();
+        loadMatchManager();
+        loadRegToggle();
+        loadRegistry();
+      }, 100);
+    }
+  })();
+
+  function switchAdminTab(tabId, btnElement) {
+    document.querySelectorAll('.admin-tab-content').forEach(function(el) { el.classList.remove('active'); });
+    document.querySelectorAll('.admin-tab-btn').forEach(function(el) { el.classList.remove('active'); });
+    document.getElementById('admin-' + tabId).classList.add('active');
+    btnElement.classList.add('active');
+    
+    if (tabId === 'organizer') {
+      loadRegToggle();
+    }
+  }
+
+  // --- ACTION QUEUE ---
+  function loadQueue() {
+    document.getElementById('queue-container').innerHTML = "<p style='color:#94a3b8;'>Loading queue...</p>";
+    google.script.run.withSuccessHandler(function(res) {
+      var response = JSON.parse(res);
+      var container = document.getElementById('queue-container');
+      
+      if (!response.success || response.data.length === 0) {
+        container.innerHTML = "<p style='color: #94a3b8;'>No matches currently require admin review.</p>";
+        return;
+      }
+      
+      container.innerHTML = "";
+      response.data.forEach(function(match) {
+        var statusColor = (match.status === 'disputed') ? '#ef4444' : '#fbbf24';
+        var html = '<div class="admin-match-card" style="display:flex; justify-content:space-between; align-items:center; border-left: 4px solid ' + statusColor + ';">' +
+          '<div>' +
+            '<strong style="font-size: 16px;">' + match.matchup + '</strong><br>' +
+            '<small style="color: #cbd5e1;">' + match.stage + ' | Status: <span style="color:' + statusColor + '; font-weight:bold; text-transform:uppercase;">' + match.status + '</span></small><br>' +
+            '<small style="color: #cbd5e1;">Proposed Winner: <strong style="color: white;">' + (match.proposedWinner || 'None') + '</strong></small>' +
+          '</div>' +
+          '<div style="display:flex; gap:10px;">' +
+            '<button class="action-btn save-btn" onclick="resolveMatch(\'' + match.matchId + '\', \'approve\', this)">Approve Result</button>' +
+            '<button class="action-btn" style="background:#ef4444; color:white;" onclick="resolveMatch(\'' + match.matchId + '\', \'cancel\', this)">Wipe & Reset</button>' +
+          '</div>' +
+        '</div>';
+        container.innerHTML += html;
+      });
+    }).get_admin_queue();
+  }
+
+  function resolveMatch(matchId, action, btnElement) {
+    btnElement.innerText = "Working...";
+    btnElement.disabled = true;
+    var parentDiv = btnElement.parentElement;
+    var buttons = parentDiv.getElementsByTagName('button');
+    for (var i = 0; i < buttons.length; i++) { buttons[i].disabled = true; }
+    
+    google.script.run.withSuccessHandler(function() {
+      loadQueue();
+      loadMatchManager(); 
+    }).admin_force_resolve(matchId, action);
+  }
+
+  // --- MATCH MANAGER ---
+  function loadMatchManager() {
+    document.getElementById("manager-match-list").innerHTML = "<p style='color:#94a3b8;'>Scanning database...</p>";
+    google.script.run.withSuccessHandler(function(res) {
+      var parsed = JSON.parse(res);
+      if (!parsed.success) {
+          alert("Data Load Error: " + parsed.error);
+          return;
+      }
+      
+      masterMatchList = parsed.data;
+      globalCivs = parsed.civs;
+      globalMaps = parsed.maps;
+      
+      var players = new Set();
+      var stages = new Set();
+      var statuses = new Set();
+      
+      masterMatchList.forEach(function(m) {
+        if (m.p1) players.add(m.p1);
+        if (m.p2) players.add(m.p2);
+        if (m.stage) stages.add(m.stage);
+        if (m.status) statuses.add(m.status.toLowerCase().trim());
+      });
+
+      var pSelect = document.getElementById("slicer-player");
+      var sSelect = document.getElementById("slicer-stage");
+      var statSelect = document.getElementById("slicer-status");
+      
+      pSelect.innerHTML = '<option value="ALL">-- Filter by Player --</option>';
+      sSelect.innerHTML = '<option value="ALL">-- Filter by Stage / League --</option>';
+      statSelect.innerHTML = '<option value="ALL">-- Filter by Status --</option>';
+
+      Array.from(players).sort().forEach(function(p) { pSelect.innerHTML += '<option value="' + p + '">' + p + '</option>'; });
+      Array.from(stages).sort().forEach(function(s) { sSelect.innerHTML += '<option value="' + s + '">' + s + '</option>'; });
+      Array.from(statuses).sort().forEach(function(st) { 
+          var displayStat = st.charAt(0).toUpperCase() + st.slice(1);
+          statSelect.innerHTML += '<option value="' + st + '">' + displayStat + '</option>'; 
+      });
+
+      renderFilteredMatches();
+    }).get_all_admin_matches();
+  }
+
+  function renderFilteredMatches() {
+    var selectedPlayer = document.getElementById("slicer-player").value;
+    var selectedStage = document.getElementById("slicer-stage").value;
+    var selectedStatus = document.getElementById("slicer-status").value.toLowerCase();
+    
+    var filtered = masterMatchList.filter(function(m) {
+      var playerMatch = (selectedPlayer === "ALL") || (m.p1 === selectedPlayer || m.p2 === selectedPlayer);
+      var stageMatch = (selectedStage === "ALL") || (m.stage === selectedStage);
+      var statusMatch = (selectedStatus === "all") || (m.status.toLowerCase().trim() === selectedStatus);
+      return playerMatch && stageMatch && statusMatch;
+    });
+
+    var container = document.getElementById("manager-match-list");
+    container.innerHTML = "";
+    
+    if (filtered.length === 0) {
+      container.innerHTML = "<p style='color:#94a3b8;'>No matches match this criteria.</p>";
+      return;
+    }
+
+    filtered.forEach(function(m) {
+      var p1CivOpts = '<option value="">-- Select Civ --</option>';
+      var p2CivOpts = '<option value="">-- Select Civ --</option>';
+      globalCivs.forEach(function(civ) {
+          var sel1 = (m.p1Civ === civ) ? "selected" : "";
+          var sel2 = (m.p2Civ === civ) ? "selected" : "";
+          p1CivOpts += '<option value="' + civ + '" ' + sel1 + '>' + civ + '</option>';
+          p2CivOpts += '<option value="' + civ + '" ' + sel2 + '>' + civ + '</option>';
+      });
+
+      var mapOpts = '<option value="">-- Select Map --</option>';
+      globalMaps.forEach(function(map) {
+          var selM = (m.map === map) ? "selected" : "";
+          mapOpts += '<option value="' + map + '" ' + selM + '>' + map + '</option>';
+      });
+
+      var winOpts = '<option value="">-- Unplayed / None --</option>';
+      var selW1 = (m.winner === m.p1) ? "selected" : "";
+      var selW2 = (m.winner === m.p2) ? "selected" : "";
+      winOpts += '<option value="' + m.p1 + '" ' + selW1 + '>' + m.p1 + '</option>';
+      winOpts += '<option value="' + m.p2 + '" ' + selW2 + '>' + m.p2 + '</option>';
+
+      var html = '<div class="admin-match-card">' +
+          '<div style="display:flex; justify-content:space-between; border-bottom:1px solid #475569; padding-bottom:10px;">' +
+             '<div>' +
+               '<h3 style="margin:0; font-size:18px;">' + m.p1 + ' <span style="color:#94a3b8; font-size:14px;">vs</span> ' + m.p2 + '</h3>' +
+               '<small style="color:#94a3b8;">Stage: ' + m.stage + ' | ID: <code style="color:#cbd5e1;">' + m.id + '</code></small>' +
+             '</div>' +
+             '<span style="background:#475569; padding:5px 10px; border-radius:4px; font-size:12px; font-weight:bold; height:fit-content; text-transform:uppercase;">' + m.status + '</span>' +
+          '</div>' +
+          '<div class="match-edit-grid">' +
+             '<div><span class="edit-label">' + m.p1 + ' Civ</span><select id="p1civ_' + m.id + '" class="edit-select">' + p1CivOpts + '</select></div>' +
+             '<div><span class="edit-label">' + m.p2 + ' Civ</span><select id="p2civ_' + m.id + '" class="edit-select">' + p2CivOpts + '</select></div>' +
+             '<div><span class="edit-label">Map Played</span><select id="map_' + m.id + '" class="edit-select">' + mapOpts + '</select></div>' +
+             '<div><span class="edit-label">Match Winner</span><select id="win_' + m.id + '" class="edit-select">' + winOpts + '</select></div>' +
+          '</div>' +
+          '<button id="btn_' + m.id + '" class="action-btn save-btn" onclick="executeAdminSave(\'' + m.id + '\')">Force Save & Settle</button>' +
+        '</div>';
+      container.innerHTML += html;
+    });
+  }
+
+  function executeAdminSave(matchId) {
+      var btn = document.getElementById("btn_" + matchId);
+      btn.innerText = "Saving to Database...";
+      btn.disabled = true;
+
+      var payload = {
+          p1Civ: document.getElementById("p1civ_" + matchId).value,
+          p2Civ: document.getElementById("p2civ_" + matchId).value,
+          map: document.getElementById("map_" + matchId).value,
+          winner: document.getElementById("win_" + matchId).value
+      };
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+            var parsed = JSON.parse(res);
+            if (parsed.success) {
+                btn.innerText = "Saved Successfully";
+                btn.style.background = "#3b82f6";
+                setTimeout(loadMatchManager, 1000); 
+            } else {
+                btn.innerText = "Error: " + parsed.error;
+                btn.style.background = "#ef4444";
+                btn.disabled = false;
+            }
+        })
+        .admin_save_match(matchId, payload);
+  }
+
+  // --- TOURNAMENT ORGANIZER ENGINE ---
+  function submitTournamentGenerator() {
+    var tName = document.getElementById('tourneyName').value;
+    var groupSizeInput = document.getElementById('groupSize').value;
+    
+    if (!tName || !groupSizeInput || parseInt(groupSizeInput) < 2) {
+      alert("Please provide a valid Tournament Name and Number of Players.");
+      return;
+    }
+
+    var btn = document.getElementById('generate-btn');
+    var loader = document.getElementById('tourney-loader');
+    
+    btn.innerText = "⏳ Generating Architecture... Please Wait";
+    btn.disabled = true;
+    btn.style.background = "#94a3b8"; 
+    
+    loader.style.display = 'block';
+    loader.innerHTML = "⏳ Building database sheets. Do not close this page.";
+    
+    var config = {
+      name: tName,
+      type: document.getElementById('tourneyType').value,
+      size: parseInt(groupSizeInput),
+      format: document.getElementById('matchFormat').value,
+      playoffFormat: document.getElementById('playoffFormat').value,
+      finalFormat: document.getElementById('finalFormat').value
+    };
+    
+    google.script.run
+      .withSuccessHandler(function() { 
+          loader.innerHTML = "✅ Tournament Generated Successfully! Sheets deployed.";
+          btn.innerText = "Generate Tournament Architecture";
+          btn.disabled = false;
+          btn.style.background = "#10b981";
+          
+          setTimeout(function() {
+              loader.style.display = 'none';
+              document.getElementById('tourneyName').value = ""; 
+          }, 4000);
+      })
+      .withFailureHandler(function(err) { 
+          alert("Error generating tournament: " + err.message); 
+          btn.innerText = "Generate Tournament Architecture";
+          btn.disabled = false;
+          btn.style.background = "#10b981";
+          loader.style.display = 'none';
+      })
+      .process_tournament_form(config);
+  }
+
+  // --- REGISTRATION TOGGLE LOGIC ---
+  function loadRegToggle() {
+    var btn = document.getElementById('reg-toggle-btn');
+    btn.innerText = "Loading...";
+    btn.disabled = true; 
+    
+    google.script.run.withSuccessHandler(function(isOpen) {
+      if (isOpen) {
+         btn.style.background = "#ef4444";
+         btn.innerText = "Close Registration";
+         btn.dataset.state = "open";
+      } else {
+         btn.style.background = "#10b981";
+         btn.innerText = "Open Registration";
+         btn.dataset.state = "closed";
+      }
+      btn.disabled = false; 
+    }).get_registration_status();
+  }
+
+  function flipRegistrationToggle() {
+    var btn = document.getElementById('reg-toggle-btn');
+    
+    if (btn.disabled || btn.innerText === "Loading..." || btn.innerText === "Updating...") {
+      return;
+    }
+    
+    var isCurrentlyOpen = (btn.dataset.state === "open");
+    
+    var actionText = isCurrentlyOpen ? "CLOSE public registration" : "OPEN public registration";
+    if (!confirm("Are you sure you want to " + actionText + "? This will broadcast a pinned announcement to the Telegram group.")) {
+      return; 
+    }
+    
+    btn.innerText = "Updating...";
+    btn.disabled = true;
+    
+    google.script.run.withSuccessHandler(function() {
+       loadRegToggle(); 
+    }).toggle_registration_status(!isCurrentlyOpen);
+  }
+
+  // --- REGISTERED PLAYERS ---
+  function loadRegistry() {
+    document.getElementById('registry-container').innerHTML = "<p style='color:#94a3b8;'>Scanning registration sheet...</p>";
+    google.script.run.withSuccessHandler(function(res) {
+      var response = JSON.parse(res);
+      var container = document.getElementById('registry-container');
+      
+      if (!response.success || response.data.length === 0) {
+        container.innerHTML = "<p style='color: #94a3b8;'>No players registered yet.</p>";
+        return;
+      }
+      
+      container.innerHTML = "";
+      response.data.forEach(function(player) {
+        var html = '<div class="admin-match-card" style="display:flex; justify-content:space-between; align-items:center;">' +
+          '<div>' +
+            '<strong style="font-size: 16px;">' + (player.name || 'Unknown Player') + '</strong><br>' +
+            '<small style="color: #cbd5e1;">Contact/Discord: <span style="color: white;">' + (player.contact || 'N/A') + '</span></small>' +
+          '</div>' +
+          '<div style="text-align: right;">' +
+            '<small style="color: #cbd5e1;">Registered: ' + (player.timestamp || '') + '</small>' +
+          '</div>' +
+        '</div>';
+        container.innerHTML += html;
+      });
+    }).get_registered_players();
+  }
+</script>

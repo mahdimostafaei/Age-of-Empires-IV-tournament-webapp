@@ -1,0 +1,859 @@
+<div class="tourney-container">
+  
+  <!-- Tab Navigation -->
+  <div class="sub-nav">
+    <button id="btn-live" class="sub-btn active" onclick="switchTourneyTab('live-view', this)">🏆 Active Tournament</button>
+    <button id="btn-hist" class="sub-btn" onclick="switchTourneyTab('history-view', this)">📜 Hall of Fame / History</button>
+    <button id="btn-reg" class="sub-btn" onclick="switchTourneyTab('registration-view', this)">📝 Tournament Sign-Up</button>
+  </div>
+
+  <div id="tourney-loader" class="state-loader">
+    <div class="spinner"></div>
+    <p>Connecting to database ledger...</p>
+  </div>
+
+  <!-- REGISTRATION VIEW -->
+  <div id="registration-view" class="sub-page" style="display: none;">
+    <div class="reg-layout-wrapper">
+      
+      <!-- LEFT SIDE: The Registration Form -->
+      <div class="reg-form-card" style="position: relative; max-width: 500px; width: 100%; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;">
+        
+        <!-- RULES ICON -->
+        <button onclick="openTournamentRules()" title="General Terms & Rules" style="position: absolute; top: 15px; left: 15px; background: transparent; border: none; font-size: 22px; cursor: pointer; padding: 5px; transition: transform 0.2s;">
+          ⚖️
+        </button>
+
+        <!-- CLOSED STATE BANNER -->
+        <div id="reg-closed-banner" style="display: none; text-align: center; padding: 30px 10px;">
+          <h1 style="font-size: 40px; margin: 0 0 10px 0;">🛑</h1>
+          <h2 style="color: #ef4444; margin-top: 0;">Registration Closed</h2>
+          <p style="color: #64748b;">There are no active tournaments accepting sign-ups right now. Please wait for an admin to open the queue.</p>
+        </div>
+        
+        <div id="reg-form-state">
+          <h2 style="color: #1e5b43; margin-top: 0; margin-bottom: 5px; text-align: center;">Tournament Sign-Up</h2>
+          
+          <label style="font-weight: bold; font-size: 13px; color: #334155;">In-Game Name <span style="color: #ef4444;">*</span></label>
+          <input type="text" id="reg-name" placeholder="The gamer tag you use in Age of Empires IV e.g. , The Warrior" style="width: 100%; padding: 12px; margin: 5px 0 15px 0; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;" required>
+
+          <label style="font-weight: bold; font-size: 13px; color: #334155;">Telegram Username <span style="color: #ef4444;">*</span></label>
+          <input type="text" id="reg-tele" placeholder="@username" style="width: 100%; padding: 12px; margin: 5px 0 15px 0; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;" required>
+
+          <label style="font-weight: bold; font-size: 13px; color: #334155; display: flex; align-items: center;">
+            AoE4 World ID (Optional)
+            <div class="info-tooltip" tabindex="0">
+              ❓
+              <span class="tooltip-text">
+                Go to <a href="https://aoe4world.com" target="_blank" rel="noopener noreferrer">aoe4world.com</a>, search your in-game name, and copy the numbers at the end of the URL.
+              </span>
+            </div>
+          </label>
+          <input type="text" id="reg-aoe" placeholder="e.g., 11927895" style="width: 100%; padding: 12px; margin: 5px 0 20px 0; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;">
+
+          <button id="reg-submit-btn" onclick="submitRegistration()" style="width: 100%; padding: 14px; background: #1e5b43; color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer;">Register Now</button>
+          <p id="reg-error" style="color: #ef4444; font-size: 13px; font-weight: bold; text-align: center; display: none; margin-top: 15px;"></p>
+        </div>
+
+        <div id="reg-success-state" style="display: none; text-align: center; padding: 20px 0;">
+          <h1 style="font-size: 50px; margin: 0 0 10px 0; color: #10b981;">✅</h1>
+          <h2 style="color: #1e5b43; margin-top: 0;">Registration Confirmed</h2>
+          <p style="color: #334155;">Welcome, <strong id="succ-name"></strong>! Your status is now Active.</p>
+          
+          <div style="background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 8px; padding: 20px; margin-top: 20px;">
+            <p style="margin: 0 0 5px 0; color: #64748b; font-size: 14px; text-transform: uppercase; font-weight: bold;">Your Player Dashboard PIN</p>
+            <h1 id="succ-pin" style="margin: 0; color: #0f172a; font-size: 36px; letter-spacing: 4px;"></h1>
+            <p style="margin: 10px 0 0 0; color: #ef4444; font-size: 12px; font-weight: bold;">⚠️ Screenshot or write this down. You need it to report matches!</p>
+          </div>
+          
+          <button onclick="resetRegistration()" style="margin-top: 25px; padding: 10px 20px; background: #e2e8f0; color: #334155; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Register Another Player</button>
+        </div>
+      </div>
+
+      <!-- RIGHT SIDE: Public Roster Panel -->
+      <div class="reg-players-card" style="max-width: 350px; width: 100%; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; height: fit-content;">
+        <h3 style="color: #1e5b43; margin-top: 0; margin-bottom: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; font-size: 16px;">📋 Current Roster</h3>
+        <div id="public-registry-list" style="max-height: 400px; overflow-y: auto; padding-right: 5px;">
+          <p style="color: #64748b; font-size: 14px; text-align: center;">Loading players...</p>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+
+  <!-- RULES VIEW (Moved outside of the registration-view container) -->
+  <div id="rules-view" class="sub-page" style="display: none;">
+    <div style="position: relative; max-width: 800px; margin: 40px auto; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; direction: rtl; text-align: right; font-family: Tahoma, Arial, sans-serif;">
+      
+      <!-- Tiny '✖' Close Button (Moved to left for RTL layout) -->
+      <button onclick="closeTournamentRules()" title="Close Rules" style="position: absolute; top: 15px; left: 15px; background: transparent; border: none; font-size: 18px; font-weight: bold; cursor: pointer; color: #94a3b8;">
+        ✖
+      </button>
+      
+      <h2 style="color: #1e5b43; margin-top: 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">قوانین جامع در تورنومنت های بازی Age of Empires 4</h2>
+      
+      <div id="rules-content" style="color: #334155; line-height: 1.7; font-size: 15px; margin-top: 20px;">
+        
+        <h3 style="color: #1e5b43; margin-bottom: 5px;">1. زمانبندی:</h3>
+        <ul style="margin-top: 0; padding-right: 20px; margin-bottom: 25px;">
+          <li style="margin-bottom: 8px;">تمامی بازیکنان شرکت کننده در تورنومنت باید در بازه زمانی تعیین شده برای برگزاری، در گروه تلگرام یا کانال دیسکورد حاضر باشند. مسابقات معمولا در روزهای آخر هفته (عصر پنجشنبه و صبح جمعه) برگزار می شوند.</li>
+          <li style="margin-bottom: 8px;">در صورتیکه تورنومنت به روز/روزهای بعدی کشیده شود، بازیکنان باید با تعیین زمان بعدی در همان شب و اعلام آن به ادمین، در ساعت مقرر برای انجام بازی حاضر شوند.<br>
+            <span style="color: #64748b; font-size: 13.5px; font-style: italic;">* لطفا تو این بازه وارد بازی دیگه نشید و stand-by بمونید.</span>
+          </li>
+          <li style="margin-bottom: 8px;">بعد از اتمام هر set، بازیکنان می‌بایست نهایتا با فاصله 15 دقیقه به انجام بازی های بعدی بپردازند. (در صورت حاضر نشدن حریف، نتیجه مسابقه، با تصمیم ادمین، به نفع شخص حاضر اعلام می‌شود.) همچنین در صورتیکه مسابقه قبلی حریف شما اتمام نیافته باشد انتظار می رود تا بازیکن از طریق گروه های ارتباطی (لینک شده در بالا) از نتیجه آن مسابقه مطلع شده و در کمترین زمان برای انجام بازی حاضر شود. بدیهی است در صورت تاخیر وی تا 15 دقیقه نتیجه مسابقه به نفع شخص حاضر اعلام می‌شود.</li>
+          <li style="margin-bottom: 8px;">زمانیکه فرمت مسابقات به صورت b03 یا b05 است بازی ها باید بدون فاصله و پشت سر هم برگزار شود. در صورت لزوم بازیکنان مجاز هستند بین هر دوبازی نهایتا 5 دقیقه وقفه ایجاد کنند.</li>
+        </ul>
+
+        <h3 style="color: #1e5b43; margin-bottom: 5px;">2. سواستفاده از باگ ها و قابلیت های بازی:</h3>
+        <ul style="margin-top: 0; padding-right: 20px; margin-bottom: 25px;">
+          <li style="margin-bottom: 8px;">پاک کردن ماهی در مپ های آبی و هایبرید که با قصد آسیب رسانی به حریف انجام شود تخلف محسوب می شود.</li>
+          <li style="margin-bottom: 8px;">سوپروایز کردن ساختمان ها با بیش از یک imperial official تخلف محسوب می شود.</li>
+          <li style="margin-bottom: 8px;">ساختن دیوار سنگی در ایج ۲ تخلف محسوب می شود.</li>
+          <li style="margin-bottom: 8px;">سواستفاده از قابلیت/باگ هایی که ممکن است در پچ/آپدیت های جدید و به صورت موقت به وجود بیاید تخلف محسوب می شود. لذا اگر درباره استفاده از قابلیتی شک دارید حتما از ادمین سوال کنید.</li>
+        </ul>
+
+        <h3 style="color: #1e5b43; margin-bottom: 5px;">3. اسمرف کردن و تقلب:</h3>
+        <ul style="margin-top: 0; padding-right: 20px; margin-bottom: 25px;">
+          <li style="margin-bottom: 8px;">همه بازیکنان باید با اکانت اصلی خود در بازی ها حاضر شوند. اکانت اصلی اکانتی است که اکثر بازی های خود را با آن انجام می‌دهید.</li>
+          <li style="margin-bottom: 8px;">از آنجایی که بعضی از شرکت کنندگان بازی اوریجینال را ندارند و با اکانت دوست خود شرکت می‌کنند، حتما باید قبل از انجام بازی این موضوع را به ادمین اطلاع داده و صرفا با تایید وی این کار را انجام دهند.</li>
+          <li style="margin-bottom: 8px;">استفاده از چیت یا هک های مختلف (مپ هک، زوم هک و ...) تخلف محسوب می شود. بازیکنانی که از چیت استفاده کنند به صورت مادام از شرکت در تورنومنت های آینده محروم می شوند.</li>
+        </ul>
+
+        <h3 style="color: #1e5b43; margin-bottom: 5px;">4. ارتباط با دیگر شرکت کنندگان:</h3>
+        <ul style="margin-top: 0; padding-right: 20px; margin-bottom: 25px;">
+          <li style="margin-bottom: 8px;">بازیکنان صرفا مجاز به صحبت کردن در رابطه با انتخاب سیو، انتخاب مپ و اعلام آمادگی برای برگزاری بازی هستند. استفاده از taunt های نامناسب (مثلا taunt شماره 8: <span style="font-family: monospace;">All hail king of the losers</span>) و یا سایر taunt هایی که ممکن است بی احترامی به حریف تلقی شود تخلف محسوب می شود. این قانون مربوط به تمامی ارتباطات اعم از گروه تلگرام، دیسکورد و یا Match Lobby می‌باشد. در صورتیکه بازیکنی رفتار نامناسبی داشت، لطفا با یک اسکرین شات به ادمین گزارش دهید.</li>
+          <li style="margin-bottom: 8px;">رفتار تمسخر آمیز (Bad Mannering) که به منظور تمسخر یا تحقیر سطح بازی بازیکن مقابل تلقی شود تخلف محسوب می شود. به عنوان مثال جابجایی تمامی لندمارک های مغول و پنهان کردن آن ها در نقاط مختلف مپ در صورتیکه نتیجه بازی تا حدود زیادی مشخص است، تخلف محسوب می شود.<br>
+            <span style="color: #64748b; font-size: 13.5px; font-weight: bold;">تصمیم گیری در رابطه با این موضوع برعهده ادمین می باشد.</span>
+          </li>
+        </ul>
+
+        <h3 style="color: #1e5b43; margin-bottom: 5px;">5. اخلاق و رفتار مناسب:</h3>
+        <ul style="margin-top: 0; padding-right: 20px; margin-bottom: 25px;">
+          <li style="margin-bottom: 8px;">شرکت کنندگانی که با جوسازی، در گروه تلگرام، دیسکورد و یا سایر پلت فرم ها، باعث به تنش کشیدن مسابقات و جو کامیونتی بشوند و یا به صورت غیر مستقیم و از طریق دعوت دوستان خود به این کار، باعث پدید آمدن هرگونه جنجال و خدشه در برگزاری تورنومنت شوند، از تورنومنت های درحال برگزاری و نیز تورنومنت های بعدی حذف و محروم می‌شوند.</li>
+          <li style="margin-bottom: 8px;">توهین به یکدیگر و یا ادمین ها، در هر صورتی باعث محرومیت بازیکن، از شرکت در تورنومنت های بعدی می شود. در صورتی که به رای یک ادمین اعتراضی دارید، میتوانید اعتراض خود را اعلام کرده و با بررسی مجدد توسط سایر ادمین ها، تصمیم نهایی گرفته می‌شود.</li>
+          <li style="margin-bottom: 8px;">به یاد داشته باشید که تورنومنت ها در درجه اول برای دورهم جمع شدن و فان انجام میشود و هر چند که سعی ما برای بهتر شدن سطح بازی (به خصوص بازیکنان ضعیف‌تر، و تا جای ممکن) است ولی به طور کلی سطح آن ها متوسط تلقی می‌شود. لذا در هر تصمیم گیری، در ابتدا مورد بالا لحاظ می‌شود.</li>
+        </ul>
+
+        <div style="background: #f8fafc; border-right: 4px solid #1e5b43; padding: 15px; border-radius: 4px; margin-top: 30px; font-size: 14px;">
+          <p style="margin: 0 0 8px 0; color: #475569;">قوانین و جزییات هر تورنومنت به صورت جدا و قبل از تورنومنت اعلام می شود. حتما آن ها را مطالعه نمایید. قوانین موجود در این متن نیز به صورت کلی به تمامی تورنومنت هایی که در این کانال برگزار می شود اطلاق می‌شود. تمامی قوانین صرفا به منظور هر چه بهتر انجام شدن تورنومنت ها تعیین شده اند.</p>
+          <p style="margin: 0; font-weight: bold; color: #1e5b43;">- ادمین ها</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTIVE VIEW -->
+  <div id="live-view" class="sub-page">
+    
+    <div id="no-active-banner" class="empty-state" style="display: none; text-align: center; padding: 40px;">
+      <h2 style="color: #1e5b43;">No Active Tournament Found</h2>
+      <p style="color: #64748b; margin-top: 10px;">
+        Check out our 
+        <a href="https://t.me/persianaoe4" target="_blank" rel="noopener noreferrer" style="color: #229ed9; font-weight: bold; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
+          <svg style="width: 16px; height: 16px; fill: currentColor;" viewBox="0 0 24 24">
+            <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18 1.897-.962 6.502-1.359 8.627-.168.9-.5 1.201-.82 1.23-.697.064-1.228-.461-1.901-.903-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.911.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.012-1.252-.242-1.865-.442-752-.244-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635.099-.002.321.023.465.14.12.098.153.228.166.331.011.093.024.306.011.471z"/>
+          </svg>
+          Telegram Channel
+        </a> 
+        to find out about latest and upcoming tourneys.
+      </p>
+    </div>
+
+    <!-- Active Content with Max-Width -->
+    <div id="active-content" style="display: none; max-width: 1200px; margin: 0 auto;">
+      
+      <!-- 3-Part Control Bar -->
+      <div class="controls-bar">
+        <div class="controls-left">
+          <label>Stage: 
+            <select id="league-filter" class="tourney-select" onchange="applyFilters()"></select>
+          </label>
+          <label>Player: 
+            <select id="player-filter" class="tourney-select" onchange="applyFilters()">
+              <option value="all">-- All --</option>
+            </select>
+          </label>
+        </div>
+        <div id="tourney-title" class="controls-center">Loading...</div>
+        <div class="controls-right">
+          <button onclick="loadTournamentViewData()" class="refresh-btn">🔄 Refresh</button>
+        </div>
+      </div>
+
+      <!-- BRACKET VIEW CONTAINER (Hidden by Default) -->
+      <div id="bracket-view-container" style="display: none; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); overflow: hidden; border: 1px solid #e2e8f0; margin-bottom: 20px;">
+        <div class="tourney-card-header">🏆 Championship Bracket</div>
+        <div class="bracket-tree-root" id="bracket-tree">
+          <!-- Rendered via JS -->
+        </div>
+      </div>
+
+      <!-- LEAGUE GRID (Visible by Default) -->
+      <div id="tourney-grid" class="tourney-grid">
+        <!-- League Standings -->
+        <div class="tourney-card">
+          <div class="tourney-card-header">📊 League Standings</div>
+          <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+            <table class="tourney-table">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Player</th>
+                  <th>Wins</th>
+                  <th>Win %</th>
+                </tr>
+              </thead>
+              <tbody id="standings-body">
+                <!-- Rendered via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Meta Analysis -->
+        <div class="tourney-card">
+          <div class="tourney-card-header">📈 Meta Analysis</div>
+          <div id="fav-map-banner" class="meta-banner">Favorite Map: <strong>Loading...</strong></div>
+          <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+            <table class="tourney-table">
+              <thead>
+                <tr>
+                  <th>Civilization</th>
+                  <th>Picks</th>
+                  <th>Win Rate</th>
+                </tr>
+              </thead>
+              <tbody id="meta-body">
+                <!-- Rendered via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Match Schedule & Results -->
+      <div class="tourney-card" style="margin-top: 20px;">
+        <div class="tourney-card-header">⚔️ Match Schedule & Results</div>
+        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+          <table class="tourney-table schedule-table">
+            <thead>
+              <tr>
+                <th>Match ID</th>
+                <th>Player 1</th>
+                <th>P1 Civ</th>
+                <th>P2 Civ</th>
+                <th>Player 2</th>
+                <th>Map</th>
+                <th>Winner</th>
+              </tr>
+            </thead>
+            <tbody id="schedule-body">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div> <!-- Closes active-content -->
+  </div> <!-- THE MISSING TAG: This closes live-view and unbreaks the app -->
+
+  <!-- ARCHIVE VIEW -->
+  <div id="history-view" class="sub-page" style="display: none;">
+    <div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap;">
+      <div style="flex: 3; min-width: 300px;">
+        <h2 class="section-title">📜 Past Tournament Champions</h2>
+        <div class="table-card">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Tournament</th><th>Type</th><th>Champion 🥇</th><th>Matches</th><th>Top Civ</th><th>Period</th>
+              </tr>
+            </thead>
+            <tbody id="history-rows">
+              <tr><td colspan="6" style="text-align: center;">Loading archive...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div style="flex: 1; min-width: 220px;">
+        <h2 class="section-title">🏆 Lifetime Leaders</h2>
+        <div class="table-card">
+          <!-- Added inline override to prevent artificial stretching -->
+          <table class="data-table" style="min-width: auto;">
+            <thead><tr><th>Player</th><th style="text-align: right;">Wins 🥇</th></tr></thead>
+            <tbody id="lifetime-rows">
+              <tr><td colspan="2" style="text-align: center; color:#64748b;">Loading leaders...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STYLES -->
+<style>
+  /* Base Filters & Containers */
+  .controls-bar { background: white; padding: 15px 20px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 15px; border: 1px solid #e2e8f0; }
+  .controls-left { display: flex; gap: 20px; align-items: center; }
+  .controls-center { flex: 1; text-align: center; color: #1e5b43; margin: 0; font-size: 22px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; min-width: 200px; }
+  .controls-right { display: flex; justify-content: flex-end; }
+  .controls-bar label { font-weight: bold; color: #1e5b43; font-size: 14px; }
+  .tourney-select { padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 4px; margin-left: 10px; font-size: 14px; outline: none; }
+  .refresh-btn { background: #1e5b43; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 14px; }
+  
+  .tourney-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .tourney-grid { grid-template-columns: 1fr; } }
+  
+  .tourney-card { background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); overflow: hidden; border: 1px solid #e2e8f0; }
+  .tourney-card-header { background: #ffffff; color: #1e5b43; padding: 15px 20px; font-weight: 800; font-size: 16px; border-bottom: 2px solid #e2e8f0; }
+  .meta-banner { background: #e2e8f0; color: #334155; padding: 10px 20px; font-size: 14px; border-bottom: 1px solid #cbd5e1; }
+  
+  /* Tables */
+  .tourney-table { width: 100%; border-collapse: collapse; text-align: left; }
+  .tourney-table th { background: #1e5b43; color: white; padding: 10px 15px; font-size: 13px; font-weight: bold; }
+  .tourney-table td { padding: 10px 15px; border-bottom: 1px solid #f1f5f9; font-size: 13px; color: #334155; }
+  
+  .rank-1 { background-color: #d1e7dd; font-weight: bold; }
+  .rank-2 { background-color: #e2e3e5; font-weight: bold; }
+  .rank-3 { background-color: #fff3cd; font-weight: bold; }
+  .rank-rel { background-color: #f8d7da; font-weight: bold; }
+  .schedule-table td { border-bottom: 1px solid #e2e8f0; }
+  .winner-text { font-weight: bold; color: #b45309; }
+
+  /* Converging Visual Bracket Styles */
+  .bracket-tree-root { display: flex; justify-content: center; align-items: stretch; gap: 30px; padding: 30px; overflow-x: auto; background: #f8fafc; }
+  .bracket-side { display: flex; gap: 30px; }
+  .bracket-column { display: flex; flex-direction: column; justify-content: space-around; min-width: 220px; gap: 15px; }
+  .bracket-round-title { text-align: center; font-weight: 800; color: #1e5b43; margin-bottom: 10px; text-transform: uppercase; font-size: 13px; letter-spacing: 1px; }
+  
+  .match-box { background: white; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+  .match-player { display: flex; justify-content: space-between; padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-size: 13px; color: #334155; }
+  .match-player:last-child { border-bottom: none; }
+  .match-player.winner { font-weight: bold; background-color: #d1e7dd; color: #0f5132; }
+  .center-final { min-width: 250px; margin: 0 10px; }
+
+  /* Interactive Info Tooltip */
+  .info-tooltip { position: relative; display: inline-flex; cursor: help; margin-left: 6px; align-items: center; }
+  .info-tooltip .tooltip-text { 
+    visibility: hidden; width: 260px; background-color: #1e293b; color: #f8fafc; text-align: left; 
+    border-radius: 6px; padding: 12px; position: absolute; z-index: 100; bottom: 135%; left: 50%; 
+    transform: translateX(-50%); opacity: 0; transition: opacity 0.2s; font-size: 12px; 
+    font-weight: normal; box-shadow: 0 4px 12px rgba(0,0,0,0.15); line-height: 1.5; pointer-events: none; 
+  }
+  .info-tooltip:hover .tooltip-text, .info-tooltip:focus-within .tooltip-text { 
+    visibility: visible; opacity: 1; pointer-events: auto; 
+  }
+  .info-tooltip .tooltip-text a { color: #38bdf8; text-decoration: underline; font-weight: bold; }
+  .info-tooltip .tooltip-text a:hover { color: #7dd3fc; }
+  /* Little downward arrow for the tooltip */
+  .info-tooltip .tooltip-text::after { 
+    content: ""; position: absolute; top: 100%; left: 50%; margin-left: -6px; 
+    border-width: 6px; border-style: solid; border-color: #1e293b transparent transparent transparent; 
+  }
+  /* Registration Split Layout */
+  .reg-layout-wrapper { display: flex; gap: 30px; justify-content: center; align-items: flex-start; margin: 40px auto; padding: 0 20px; flex-wrap: wrap; }
+  .public-player-row { padding: 10px; border-bottom: 1px solid #f1f5f9; font-weight: bold; color: #334155; display: flex; align-items: center; gap: 12px; }
+  .public-player-row:last-child { border-bottom: none; }
+  .player-avatar { background: #1e5b43; color: white; width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  
+  /* Scrollbar for roster */
+  #public-registry-list::-webkit-scrollbar { width: 6px; }
+  #public-registry-list::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
+  /* =========================================
+     PAGE SPECIFIC MOBILE OVERRIDES 
+     ========================================= */
+  @media (max-width: 768px) {
+    /* Stack the Control Bar vertically */
+    .controls-bar { 
+      flex-direction: column; 
+      align-items: stretch; 
+      padding: 15px; 
+      gap: 15px;
+    }
+    .controls-left { 
+      flex-direction: column; 
+      align-items: stretch; 
+      gap: 12px; 
+    }
+    .controls-left label {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .tourney-select { 
+      margin-left: 0; 
+      width: 100%; 
+      box-sizing: border-box;
+    }
+    .controls-center { 
+      font-size: 18px; 
+    }
+    .refresh-btn { 
+      width: 100%; 
+      padding: 12px;
+    }
+    
+    /* Reduce bulky padding on Registration & Rules pages */
+    #registration-view > div, #rules-view > div { 
+      padding: 20px !important; 
+      margin: 15px 10px !important; 
+    }
+  }
+</style>
+
+<script>
+  let rawTournamentData = null; 
+  let baseTournamentName = "Active Tournament"; 
+  let loadingTimeout = null; // Safety tracker
+
+  // --- TAB ROUTER & PUBLIC ROSTER ---
+  function switchTourneyTab(tabId, btnElement) {
+    document.querySelectorAll('.sub-page').forEach(p => p.style.display = 'none');
+    document.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(tabId).style.display = 'block';
+    if(btnElement) btnElement.classList.add('active');
+
+    // Live Check for Registration & Public Roster
+    if (tabId === 'registration-view') {
+       document.getElementById('reg-form-state').style.display = 'none'; 
+       document.getElementById('reg-closed-banner').style.display = 'none';
+       
+       google.script.run.withSuccessHandler(function(isOpen) {
+           if (isOpen) {
+               document.getElementById('reg-form-state').style.display = 'block';
+           } else {
+               document.getElementById('reg-closed-banner').style.display = 'block';
+           }
+       }).get_registration_status();
+
+       document.getElementById('public-registry-list').innerHTML = '<p style="color: #64748b; font-size: 14px; text-align: center;">Loading roster...</p>';
+       google.script.run.withSuccessHandler(function(res) {
+           const response = JSON.parse(res);
+           const container = document.getElementById('public-registry-list');
+           
+           if (!response.success || response.data.length === 0) {
+               container.innerHTML = '<p style="color: #94a3b8; font-size: 14px; text-align: center; padding: 20px;">No players registered yet. Be the first!</p>';
+               return;
+           }
+           
+           container.innerHTML = '';
+           response.data.forEach(function(p) {
+               let name = p.name || 'Unknown';
+               let initial = name.charAt(0).toUpperCase();
+               container.innerHTML += `
+                 <div class="public-player-row">
+                   <div class="player-avatar">${initial}</div>
+                   <div style="font-size: 14px;">${name}</div>
+                 </div>
+               `;
+           });
+       }).get_registered_players();
+    }
+  }
+
+  // --- ROBUST DATA FETCHING ---
+  function loadTournamentViewData() {
+    const loader = document.getElementById('tourney-loader');
+    loader.style.display = 'block';
+    loader.innerHTML = '<div class="spinner"></div><p>Connecting to database ledger...</p>';
+    document.getElementById('active-content').style.display = 'none';
+    
+    // Safety Kill-Switch: Abort spinner if backend hangs for 15 seconds
+    clearTimeout(loadingTimeout);
+    loadingTimeout = setTimeout(() => {
+        loader.innerHTML = '<p style="color:#ef4444; font-weight:bold;">Server timed out. Please check your Apps Script backend or click Refresh.</p>';
+    }, 15000);
+
+    google.script.run
+      .withSuccessHandler(payload => {
+        clearTimeout(loadingTimeout);
+        renderTournamentUI(payload);
+      })
+      .withFailureHandler(err => {
+        clearTimeout(loadingTimeout);
+        loader.innerHTML = `<p style="color:#ef4444; font-weight:bold;">Database Error: ${err.message}</p>`;
+      })
+      .get_tournament_page_data();
+  }
+
+  function renderTournamentUI(textPayload) {
+    document.getElementById('tourney-loader').style.display = 'none';
+    const data = JSON.parse(textPayload);
+    rawTournamentData = data; 
+
+    if (data.tournament && data.tournament.name) {
+       baseTournamentName = data.tournament.name.replace(/[- ]*league\s+[a-z0-9]+/i, '').trim();
+    }
+
+    if (data.error || !data.hasActive) {
+      document.getElementById('no-active-banner').style.display = 'block';
+      drawHistoryTable(data.history);
+      return;
+    }
+
+    document.getElementById('active-content').style.display = 'block';
+    populateFilters(data);
+    applyFilters();
+    drawHistoryTable(data.history);
+  }
+
+  function populateFilters(data) {
+    const leagueFilter = document.getElementById('league-filter');
+    const playerFilter = document.getElementById('player-filter');
+    
+    leagueFilter.innerHTML = ''; 
+    playerFilter.innerHTML = '<option value="all">-- All Players --</option>';
+
+    if (data.groups && data.groups.length > 0) {
+      data.groups.forEach(g => {
+        leagueFilter.innerHTML += `<option value="${g.groupName}">${g.groupName}</option>`;
+      });
+    }
+
+    const hasBracket = data.bracketRounds && Object.keys(data.bracketRounds).length > 0;
+    if (hasBracket) {
+      leagueFilter.innerHTML += `<option value="BRACKET">🏆 Playoff Bracket</option>`;
+    }
+
+    if (data.groups && data.groups.length > 0) {
+      leagueFilter.value = data.groups[0].groupName; 
+    } else if (hasBracket) {
+      leagueFilter.value = "BRACKET";
+    } else {
+      leagueFilter.innerHTML = '<option value="">No Stages Available</option>';
+    }
+
+    let uniquePlayers = new Set();
+    if (data.rawMatches) {
+      data.rawMatches.forEach(m => {
+        if(m.player1 && m.player1 !== "BYE") uniquePlayers.add(m.player1);
+        if(m.player2 && m.player2 !== "BYE") uniquePlayers.add(m.player2);
+      });
+    }
+    Array.from(uniquePlayers).sort().forEach(p => {
+      playerFilter.innerHTML += `<option value="${p}">${p}</option>`;
+    });
+  }
+
+  function applyFilters() {
+    if (!rawTournamentData) return;
+    const selectedLeague = document.getElementById('league-filter').value;
+    const selectedPlayer = document.getElementById('player-filter').value;
+    const isBracket = (selectedLeague === "BRACKET");
+
+    const titleEl = document.getElementById('tourney-title');
+    if (titleEl) {
+       titleEl.innerText = isBracket ? `${baseTournamentName} - Playoffs` : (selectedLeague ? `${baseTournamentName} - ${selectedLeague}` : baseTournamentName);
+    }
+
+    const activeContent = document.getElementById('active-content');
+
+    if (isBracket) {
+       activeContent.style.maxWidth = '1600px'; 
+       document.getElementById('tourney-grid').style.display = 'none';
+       document.getElementById('bracket-view-container').style.display = 'block';
+       renderBracket(rawTournamentData.bracketRounds);
+    } else {
+       activeContent.style.maxWidth = '1200px'; 
+       document.getElementById('tourney-grid').style.display = 'grid';
+       document.getElementById('bracket-view-container').style.display = 'none';
+       
+       let activeGroups = rawTournamentData.groups || [];
+       if (selectedLeague) activeGroups = activeGroups.filter(g => g.groupName === selectedLeague);
+       renderStandings(activeGroups);
+    }
+
+    let matches = rawTournamentData.rawMatches || [];
+    if (isBracket) {
+       matches = matches.filter(m => {
+          let l = m.league.toLowerCase();
+          return l.includes("knockout") || l.includes("playoff") || l.includes("bracket");
+       });
+    } else if (selectedLeague && selectedLeague !== "all") {
+       matches = matches.filter(m => m.league === selectedLeague);
+    }
+    
+    if (selectedPlayer !== "all") matches = matches.filter(m => m.player1 === selectedPlayer || m.player2 === selectedPlayer);
+    
+    renderSchedule(matches);
+    renderMeta(matches);
+  }
+
+  function renderBracket(rounds) {
+    const container = document.getElementById('bracket-tree');
+    container.innerHTML = '';
+    if (!rounds || Object.keys(rounds).length === 0) return;
+
+    const roundOrder = ["ro64", "ro32", "ro16", "quarterfinal", "semifinal", "grand final"]; 
+    
+    let sortedKeys = Object.keys(rounds)
+        .filter(r => r.toLowerCase() !== "grand final" && r.toLowerCase() !== "finals") 
+        .sort((a, b) => {
+            let idxA = roundOrder.indexOf(a.toLowerCase());
+            let idxB = roundOrder.indexOf(b.toLowerCase());
+            if (idxA === -1) idxA = 99; 
+            if (idxB === -1) idxB = 99;
+            return idxA - idxB;
+        });
+
+    let leftHTML = '<div class="bracket-side left-side">';
+    let rightHTML = '<div class="bracket-side right-side" style="flex-direction: row-reverse;">'; 
+
+    sortedKeys.forEach(roundName => {
+       let rawMatches = rounds[roundName];
+       
+       let seriesMap = {};
+       rawMatches.forEach(m => {
+          let stageKey = m.rawStage || (m.player1 + m.player2 + roundName);
+          if (!seriesMap[stageKey]) seriesMap[stageKey] = { p1: m.player1, p2: m.player2, winsP1: 0, winsP2: 0, count: 0 };
+          seriesMap[stageKey].count++;
+          
+          if (m.winner && m.winner !== "TBD" && m.winner !== "Unplayed" && m.winner !== "") {
+              if (m.winner === m.player1) seriesMap[stageKey].winsP1++;
+              else if (m.winner === m.player2) seriesMap[stageKey].winsP2++;
+          }
+       });
+
+       let seriesList = Object.values(seriesMap);
+       
+       let half = Math.ceil(seriesList.length / 2);
+       let leftSeries = seriesList.slice(0, half);
+       let rightSeries = seriesList.slice(half);
+
+       leftHTML += `<div class="bracket-column"><div class="bracket-round-title">${roundName}</div>`;
+       leftSeries.forEach(s => { leftHTML += generateMatchHTML(s); });
+       leftHTML += `</div>`;
+
+       if (rightSeries.length > 0) {
+          rightHTML += `<div class="bracket-column"><div class="bracket-round-title">${roundName}</div>`;
+          rightSeries.forEach(s => { rightHTML += generateMatchHTML(s); });
+          rightHTML += `</div>`;
+       }
+    });
+    leftHTML += '</div>';
+    rightHTML += '</div>';
+
+    let finalKey = Object.keys(rounds).find(r => r.toLowerCase() === "grand final" || r.toLowerCase() === "finals");
+    let finalHTML = '';
+    if (finalKey) {
+        let seriesMap = {};
+        rounds[finalKey].forEach(m => {
+            let stageKey = m.rawStage || (m.player1 + m.player2 + finalKey);
+            if (!seriesMap[stageKey]) seriesMap[stageKey] = { p1: m.player1, p2: m.player2, winsP1: 0, winsP2: 0, count: 0 };
+            seriesMap[stageKey].count++;
+            
+            if (m.winner && m.winner !== "TBD" && m.winner !== "Unplayed" && m.winner !== "") {
+                if (m.winner === m.player1) seriesMap[stageKey].winsP1++;
+                else if (m.winner === m.player2) seriesMap[stageKey].winsP2++;
+            }
+        });
+        
+        finalHTML = `<div class="bracket-column center-final"><div class="bracket-round-title" style="color: #b45309; font-size: 16px;">${finalKey}</div>`;
+        Object.values(seriesMap).forEach(s => { finalHTML += generateMatchHTML(s, true); });
+        finalHTML += `</div>`;
+    }
+
+    container.innerHTML = leftHTML + finalHTML + rightHTML;
+  }
+
+  function generateMatchHTML(series, isFinal = false) {
+      let reqWins = Math.ceil(series.count / 2);
+      let p1Winner = series.winsP1 >= reqWins && series.winsP1 > series.winsP2;
+      let p2Winner = series.winsP2 >= reqWins && series.winsP2 > series.winsP1;
+      
+      let p1Class = p1Winner ? "winner" : "";
+      let p2Class = p2Winner ? "winner" : "";
+      
+      let p1Text = series.p1 || "TBD";
+      let p2Text = series.p2 || "TBD";
+      
+      let p1Style = (p1Text === "TBD") ? "color: #94a3b8; font-style: italic;" : "";
+      let p2Style = (p2Text === "TBD") ? "color: #94a3b8; font-style: italic;" : "";
+      
+      let boxStyle = isFinal ? 'border: 2px solid #facc15; box-shadow: 0 4px 12px rgba(250, 204, 21, 0.2);' : '';
+      
+      return `
+        <div class="match-box" style="${boxStyle}">
+          <div class="match-player ${p1Class}"><span style="${p1Style}">${p1Text}</span> ${p1Winner ? '👑' : ''}</div>
+          <div class="match-player ${p2Class}"><span style="${p2Style}">${p2Text}</span> ${p2Winner ? '👑' : ''}</div>
+        </div>
+      `;
+  }
+
+  function renderStandings(groups) {
+    const tbody = document.getElementById('standings-body');
+    tbody.innerHTML = '';
+    if (!groups || groups.length === 0) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No standings found.</td></tr>'; return; }
+
+    groups.forEach(g => {
+      g.standings.forEach((st, idx) => {
+        let rowClass = "";
+        let rankText = st.rank;
+        if (idx === 0) { rowClass = "rank-1"; rankText = "Winner 👑"; }
+        else if (idx === 1) { rowClass = "rank-2"; rankText = "Runner-Up 🥈"; }
+        else if (idx === 2) { rowClass = "rank-3"; rankText = "3rd Place"; }
+        else if (idx >= g.standings.length - 2) { rowClass = "rank-rel"; rankText = "Relegation ⬇️"; }
+        
+        tbody.innerHTML += `<tr class="${rowClass}">
+            <td>${rankText}</td><td><strong>${st.player}</strong></td><td>${st.score}</td><td>${(st.winRate * 100).toFixed(0)}%</td>
+        </tr>`;
+      });
+    });
+  }
+
+  function renderMeta(matches) {
+    if (!matches || matches.length === 0) {
+       document.getElementById('fav-map-banner').innerHTML = `Favorite Map: <strong>No matches found</strong>`;
+       document.getElementById('meta-body').innerHTML = `<tr><td colspan="3" style="text-align:center;">No data available</td></tr>`;
+       return;
+    }
+
+    let mapCounts = {};
+    let civStats = {};
+    let topMap = { name: "N/A", count: 0 };
+
+    matches.forEach(m => {
+       if (m.map && m.map.trim() !== "" && m.map !== "-") {
+           mapCounts[m.map] = (mapCounts[m.map] || 0) + 1;
+           if (mapCounts[m.map] > topMap.count) topMap = { name: m.map, count: mapCounts[m.map] };
+       }
+       const processCiv = (civ, won) => {
+           if (!civ || civ.trim() === "" || civ === "-") return;
+           if (!civStats[civ]) civStats[civ] = { picks: 0, wins: 0 };
+           civStats[civ].picks++;
+           if (won) civStats[civ].wins++;
+       };
+       let p1Won = (m.winner === m.player1);
+       let p2Won = (m.winner === m.player2);
+       processCiv(m.p1Civ, p1Won);
+       processCiv(m.p2Civ, p2Won);
+    });
+
+    document.getElementById('fav-map-banner').innerHTML = `Favorite Map: <strong>${topMap.name} (${topMap.count} plays)</strong>`;
+    let sortedCivs = Object.keys(civStats).sort((a, b) => civStats[b].picks - civStats[a].picks);
+    let tbody = document.getElementById('meta-body');
+    tbody.innerHTML = '';
+
+    if (sortedCivs.length === 0) { tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color: #64748b;">No civ data recorded yet</td></tr>`; return; }
+
+    sortedCivs.forEach(civ => {
+        let stats = civStats[civ];
+        let winRate = ((stats.wins / stats.picks) * 100).toFixed(1) + '%';
+        tbody.innerHTML += `<tr><td><strong>${civ}</strong></td><td>${stats.picks}</td><td>${winRate}</td></tr>`;
+    });
+  }
+
+  function renderSchedule(matches) {
+    const tbody = document.getElementById('schedule-body');
+    tbody.innerHTML = '';
+    if (!matches || matches.length === 0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No matches scheduled for this view.</td></tr>'; return; }
+
+    matches.forEach(m => {
+       let winnerText = (m.winner && m.winner !== "Unplayed" && m.winner !== "") ? `👑 ${m.winner}` : `<span style="color:#94a3b8;">Pending</span>`;
+       tbody.innerHTML += `<tr>
+           <td><code style="font-size:11px; color:#64748b;">${m.matchId || "-"}</code></td>
+           <td><strong>${m.player1 || "-"}</strong></td><td>${m.p1Civ || "-"}</td><td>${m.p2Civ || "-"}</td>
+           <td><strong>${m.player2 || "-"}</strong></td><td>${m.map || "-"}</td><td><span class="winner-text">${winnerText}</span></td>
+         </tr>`;
+    });
+  }
+
+  function drawHistoryTable(historyData) {
+    const histBody = document.getElementById('history-rows');
+    const lifetimeBody = document.getElementById('lifetime-rows');
+    histBody.innerHTML = '';
+    
+    if (!historyData || historyData.length === 0) {
+      histBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color:#64748b;">No archives found.</td></tr>';
+      if (lifetimeBody) lifetimeBody.innerHTML = '<tr><td colspan="2" style="text-align: center; color:#64748b;">No data</td></tr>';
+      return;
+    } 
+
+    historyData.sort((a, b) => new Date(b.endDate) - new Date(a.endDate));
+    historyData.forEach(h => {
+      const period = (h.startDate && h.endDate) ? `${h.startDate} - ${h.endDate}` : (h.endDate || 'N/A');
+      histBody.innerHTML += `<tr><td><strong>${h.name}</strong></td><td>${h.type}</td><td><span class="champ-badge">🥇 ${h.winner}</span></td><td>${h.matches}</td><td>${h.topCiv}</td><td>${period}</td></tr>`;
+    });
+    
+    if (lifetimeBody) {
+      const winCounts = {};
+      historyData.forEach(h => {
+        const champ = String(h.winner).trim();
+        if (champ && champ !== "TBD" && champ !== "-") winCounts[champ] = (winCounts[champ] || 0) + 1;
+      });
+      const sortedChamps = Object.entries(winCounts).sort((a, b) => b[1] - a[1]);
+      if (sortedChamps.length > 0) {
+        lifetimeBody.innerHTML = sortedChamps.map(c => `<tr><td><strong>${c[0]}</strong></td><td style="text-align: right;">${c[1]}</td></tr>`).join("");
+      } else {
+        lifetimeBody.innerHTML = '<tr><td colspan="2" style="text-align: center;">No wins recorded</td></tr>';
+      }
+    }
+  }
+
+  // Auto-fetch the data when the script parses
+  loadTournamentViewData();
+
+  // --- REGISTRATION LOGIC ---
+  function submitRegistration() {
+    const btn = document.getElementById('reg-submit-btn');
+    const errObj = document.getElementById('reg-error');
+    const name = document.getElementById('reg-name').value;
+    const tele = document.getElementById('reg-tele').value;
+    const aoeId = document.getElementById('reg-aoe').value;
+
+    if (!name || !tele) {
+      errObj.innerText = "Name and Telegram are required.";
+      errObj.style.display = "block";
+      return;
+    }
+
+    errObj.style.display = "none";
+    btn.innerText = "⏳ Registering...";
+    btn.disabled = true;
+    btn.style.opacity = "0.7";
+
+    google.script.run
+      .withSuccessHandler(function(response) {
+         const data = JSON.parse(response);
+         if (data.success) {
+            document.getElementById('reg-form-state').style.display = 'none';
+            document.getElementById('succ-name').innerText = data.name;
+            document.getElementById('succ-pin').innerText = data.pin;
+            document.getElementById('reg-success-state').style.display = 'block';
+            
+            document.getElementById('reg-name').value = '';
+            document.getElementById('reg-tele').value = '';
+            document.getElementById('reg-aoe').value = '';
+         } else {
+            errObj.innerText = data.error;
+            errObj.style.display = "block";
+            btn.innerText = "Register Now";
+            btn.disabled = false;
+            btn.style.opacity = "1";
+         }
+      })
+      .process_tournament_registration({ name: name, telegram: tele, aoeId: aoeId });
+  }
+
+  function resetRegistration() {
+    document.getElementById('reg-success-state').style.display = 'none';
+    document.getElementById('reg-form-state').style.display = 'block';
+    const btn = document.getElementById('reg-submit-btn');
+    btn.innerText = "Register Now";
+    btn.disabled = false;
+    btn.style.opacity = "1";
+  }
+
+  // --- RULES PAGE NAVIGATION ---
+  function openTournamentRules() {
+    document.getElementById('registration-view').style.display = 'none';
+    document.getElementById('rules-view').style.display = 'block';
+  }
+
+  function closeTournamentRules() {
+    document.getElementById('rules-view').style.display = 'none';
+    document.getElementById('registration-view').style.display = 'block';
+  }
+</script>

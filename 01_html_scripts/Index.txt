@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <?!= include('Styles'); ?>
+  </head>
+  <body>
+
+    <nav class="top-nav">
+      <div class="logo" style="cursor:pointer;" onclick="switchTab('landing')">🛡️ AoE4 Hub</div>
+      <div class="menu-items">
+        <button onclick="switchTab('tournaments')">Tournaments</button>
+        <button onclick="switchTab('player')">Player Dashboard</button>
+        <button onclick="switchTab('bets')">Betting</button>
+        <button onclick="switchTab('stats')">Civ Stats</button>
+        <button onclick="switchTab('admin')">Admin</button>
+      </div>
+    </nav>
+
+    <!-- THE BLANK CANVAS -->
+    <div id="main-content">
+      
+      <!-- Landing Page Wrapper -->
+      <div id="landing" class="app-page active">
+        <style>
+          #landing-view { display: flex; flex-direction: column; min-height: 85vh; font-family: Tahoma, Arial, sans-serif; color: #f8fafc; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.2); margin-bottom: 20px; }
+          .flash-news-banner { background: #10b981; color: #0f172a; text-align: center; padding: 12px 20px; font-weight: 900; font-size: 15px; letter-spacing: 1px; text-transform: uppercase; }
+          .flash-news-banner span { text-decoration: underline; cursor: pointer; margin-left: 10px; }
+          .flash-news-banner span:hover { color: white; }
+          .landing-hero { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 60px 20px; text-align: center; }
+          .landing-title { font-size: 42px; font-weight: 900; color: #10b981; margin: 0 0 15px 0; }
+          .landing-subtitle { font-size: 18px; color: #cbd5e1; max-width: 700px; line-height: 1.6; margin-bottom: 50px; }
+          .landing-nav-grid { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; width: 100%; max-width: 900px; }
+          .landing-card-btn { background: #1e5b43; border: 2px solid #1e5b43; color: white; padding: 30px 20px; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; transition: all 0.3s ease; flex: 1; min-width: 240px; display: flex; flex-direction: column; align-items: center; gap: 15px; }
+          .landing-card-btn:hover { background: #10b981; border-color: #10b981; transform: translateY(-5px); box-shadow: 0 8px 15px rgba(16, 185, 129, 0.2); }
+          .landing-icon { font-size: 40px; }
+          .landing-card-btn span { font-size: 13px; font-weight: normal; color: #cbd5e1; margin-top: 5px; }
+          .landing-footer { background: #0f172a; border-top: 1px solid #334155; padding: 20px; text-align: center; }
+          .footer-links { display: flex; justify-content: center; gap: 25px; flex-wrap: wrap; }
+          .footer-links a { display: flex; align-items: center; gap: 8px; color: #94a3b8; text-decoration: none; font-weight: bold; font-size: 14px; transition: color 0.2s; }
+          .footer-links a svg { width: 20px; height: 20px; fill: currentColor; transition: transform 0.2s; }
+          .footer-links a:hover { color: #38bdf8; }
+          .footer-links a:hover svg { transform: scale(1.15); }
+        </style>
+
+        <div id="landing-view">
+          <div class="flash-news-banner" id="flash-banner">
+            🚨 NEW TOURNAMENT IS ON. <span onclick="enterTournamentPortal('btn-reg')">REGISTER NOW</span> 🚨
+          </div>
+          <div class="landing-hero">
+            <h1 class="landing-title">Age of Empires IV Tournament Hub</h1>
+            <p class="landing-subtitle">
+              Join the community, compete in active tournaments, and cement your legacy in the Hall of Fame. Select a portal below to get started.
+            </p>
+            <div class="landing-nav-grid">
+              <button class="landing-card-btn" onclick="enterTournamentPortal('btn-live')">
+                <div class="landing-icon">🏆</div>
+                Active Tournament<span>View brackets and live results</span>
+              </button>
+              <button class="landing-card-btn" onclick="enterTournamentPortal('btn-reg')">
+                <div class="landing-icon">📝</div>
+                Registration<span>Sign up for the next event</span>
+              </button>
+              <button class="landing-card-btn" onclick="enterTournamentPortal('btn-hist')">
+                <div class="landing-icon">📜</div>
+                Hall of Fame<span>Past champions and history</span>
+              </button>
+            </div>
+          </div>
+          <footer class="landing-footer">
+            <div class="footer-links">
+              <a href="https://discord.gg/5hRSHesJ" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 24 24"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189z"/></svg>
+                Discord Server
+              </a>
+              <a href="https://t.me/persianaoe4" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 24 24"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18 1.897-.962 6.502-1.359 8.627-.168.9-.5 1.201-.82 1.23-.697.064-1.228-.461-1.901-.903-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.911.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.012-1.252-.242-1.865-.442-.752-.244-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635.099-.002.321.023.465.14.12.098.153.228.166.331.011.093.024.306.011.471z"/></svg>
+                Telegram Channel
+              </a>
+              <a href="https://t.me/AgeofEmpiresivPersian" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 24 24"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18 1.897-.962 6.502-1.359 8.627-.168.9-.5 1.201-.82 1.23-.697.064-1.228-.461-1.901-.903-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.911.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.012-1.252-.242-1.865-.442-.752-.244-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635.099-.002.321.023.465.14.12.098.153.228.166.331.011.093.024.306.011.471z"/></svg>
+                Telegram Group
+              </a>
+              <a href="https://aoe4world.com" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                AoE4 World
+              </a>
+            </div>
+          </footer>
+        </div>
+      </div>
+
+    <!-- Tournament Page Container -->
+      <div id="tournaments" class="app-page hidden">
+        <?!= include('Page_Tournaments'); ?>
+      </div>
+
+      <!-- Player Dashboard Container -->
+      <div id="player" class="app-page hidden">
+        <?!= include('PlayerDashboard'); ?>
+      </div>
+
+      <!-- Betting Container -->
+      <div id="bets" class="app-page hidden">
+        <?!= include('Page_Bets'); ?>
+      </div>
+
+      <!-- Statistics Container -->
+      <div id="stats" class="app-page hidden">
+        <?!= include('Page_Stats'); ?>
+      </div>
+
+      <!-- Admin Dashboard Container -->
+      <div id="admin" class="app-page hidden">
+        <?!= include('Page_Admin'); ?>
+      </div>
+
+    <!-- THE ORIGINAL JAVASCRIPT ROUTER -->
+    <script>
+      function switchTab(exactPageId) {
+        const allPages = document.querySelectorAll('.app-page');
+        allPages.forEach(page => {
+          page.classList.remove('active');
+          page.classList.add('hidden');
+        });
+
+        // Searches for the EXACT id passed by the button
+        const selectedPage = document.getElementById(exactPageId);
+        if (selectedPage) {
+          selectedPage.classList.remove('hidden');
+          selectedPage.classList.add('active');
+        } else {
+          console.error("Router failed: Could not find container ID " + exactPageId);
+        }
+      }
+
+      function enterTournamentPortal(targetTabId) {
+        switchTab('tournaments');
+        setTimeout(() => {
+          const tabBtn = document.getElementById(targetTabId);
+          if (tabBtn) {
+            tabBtn.click();
+          }
+        }, 50);
+      }
+
+      window.addEventListener("error", function(event) {
+        let activeUser = "Unknown";
+        const nameInput = document.getElementById("login-name");
+        if (nameInput && nameInput.value) activeUser = nameInput.value;
+
+        const errorData = {
+          message: event.message,
+          source: event.filename,
+          line: event.lineno,
+          user: activeUser,
+          time: new Date().toLocaleString()
+        };
+        google.script.run.log_frontend_error(errorData);
+      });
+    </script>
+  </body>
+</html>

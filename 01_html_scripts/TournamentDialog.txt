@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      body { font-family: 'Segoe UI', sans-serif; padding: 20px; background-color: #f4f6f8; color: #333; }
+      h2 { color: #1b4332; margin-top: 0; font-size: 20px; border-bottom: 2px solid #d8f3dc; padding-bottom: 10px; }
+      .form-group { margin-bottom: 15px; }
+      label { display: block; font-weight: bold; margin-bottom: 5px; color: #2d6a4f; }
+      select, input[type="text"], input[type="number"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; box-sizing: border-box; }
+      button { width: 100%; padding: 12px; background-color: #2d6a4f; color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+      button:hover { background-color: #1b4332; }
+      .loader { display: none; text-align: center; margin-top: 15px; font-weight: bold; color: #1b4332; }
+    </style>
+  </head>
+  <body>
+    <h2>⚙️ Generate Tournament</h2>
+    <div id="form-container">
+      
+      <!-- NEW: Tournament Name Input -->
+      <div class="form-group">
+        <label for="tourneyName">Tournament Name</label>
+        <input type="text" id="tourneyName" placeholder="e.g., Clustered League Season 1" required />
+      </div>
+
+      <div class="form-group">
+        <label for="tourneyType">Tournament Format</label>
+        <select id="tourneyType">
+          <option value="League">League / Group Stage Only</option>
+          <option value="Knockout">Single Elimination Knockout</option>
+          <option value="World Cup">World Cup (Groups + Playoffs)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="groupSize">Players per Group (or Total for Knockout)</label>
+        <input type="number" id="groupSize" min="2" max="128" placeholder="e.g., 8" required />
+      </div>
+
+      <div class="form-group">
+        <label for="matchFormat">Base Series Length</label>
+        <select id="matchFormat">
+          <option value="BO1">Best of 1 (BO1)</option>
+          <option value="BO3">Best of 3 (BO3)</option>
+          <option value="BO5">Best of 5 (BO5)</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="playoffFormat">Playoff Override (If World Cup)</label>
+        <select id="playoffFormat">
+          <option value="same">-- Keep Same as Base --</option>
+          <option value="BO1">Best of 1 (BO1)</option>
+          <option value="BO3">Best of 3 (BO3)</option>
+          <option value="BO5">Best of 5 (BO5)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="finalFormat">Grand Final Override</label>
+        <select id="finalFormat">
+          <option value="same">-- Keep Same as Playoff/Base --</option>
+          <option value="BO3">Best of 3 (BO3)</option>
+          <option value="BO5">Best of 5 (BO5)</option>
+          <option value="BO7">Best of 7 (BO7)</option>
+        </select>
+      </div>
+      
+      <button onclick="submitForm()">Generate Tournament</button>
+    </div>
+    
+    <div id="loader" class="loader">
+      ⏳ Building architecture... Please wait.
+    </div>
+    
+    <script>
+      function submitForm() {
+        const tName = document.getElementById('tourneyName').value;
+        const groupSizeInput = document.getElementById('groupSize').value;
+        
+        if (!tName || !groupSizeInput || groupSizeInput < 2) {
+          alert("Please provide a valid Tournament Name and Number of Players.");
+          return;
+        }
+
+        document.getElementById('form-container').style.display = 'none';
+        document.getElementById('loader').style.display = 'block';
+        
+        const config = {
+          name: tName,
+          type: document.getElementById('tourneyType').value,
+          size: parseInt(groupSizeInput),
+          format: document.getElementById('matchFormat').value,
+          playoffFormat: document.getElementById('playoffFormat').value,
+          finalFormat: document.getElementById('finalFormat').value
+        };
+        
+        google.script.run
+          .withSuccessHandler(function() { google.script.host.close(); })
+          .withFailureHandler(function(err) { alert("Error: " + err.message); google.script.host.close(); })
+          .process_tournament_form(config);
+      }
+    </script>
+  </body>
+</html>
