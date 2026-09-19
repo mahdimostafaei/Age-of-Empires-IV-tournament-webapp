@@ -1,8 +1,3 @@
-# Ignore sensitive Telegram Bot backend code
 00_javascripts/TelegramBot/
-
-# Ignore player data and local database records
 02_local_database/
-
-# Ignore local backups
 03_backups/
