@@ -1,5 +1,4 @@
-00_javascripts/
-!00_javascripts/
-!00_javascripts/TelegramBot/
+00_javascripts/*
+!00_javascripts/TelegramBot.java
 02_local_database/
 03_backups/
