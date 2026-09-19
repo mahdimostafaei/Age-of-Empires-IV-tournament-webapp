@@ -1,7 +1,7 @@
 // ==========================================
 // 1. SETTINGS & BROADCAST
 // ==========================================
-var botToken = "8813949251:AAEIzAI4y8Ni2PTZAP0Lo86VG4qOaWPR8h8";
+var botToken = "xxx";
 var telegramGroupId = "@AgeofEmpiresivPersian";
 
 // ==========================================

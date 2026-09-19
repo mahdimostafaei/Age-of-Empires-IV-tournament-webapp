@@ -161,7 +161,7 @@ function toggle_registration_status(isOpen) {
   
   // 2. Broadcast and Pin to Telegram
   try {
-    var botToken = "8813949251:AAEIzAI4y8Ni2PTZAP0Lo86VG4qOaWPR8h8";
+    var botToken = "***";
     var telegramGroupId = "@AgeofEmpiresivPersian"; 
     var webAppUrl = ScriptApp.getService().getUrl(); 
     var textMessage = "";
